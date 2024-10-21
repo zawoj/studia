@@ -249,3 +249,56 @@ Dzięki tej strukturze możemy osiągnąć następujące korzyści:
 - Można generować bardziej szczegółowe statystyki i analizy na podstawie adresów dostawy i metod wysyłki.
 
 Pamiętaj, że ta architektura wymaga dodania dodatkowych kluczy (Address ID, Shipping Method ID) do istniejącej struktury danych, ale wykorzystuje tylko istniejące pola z pliku data.xlsx.
+
+Oczywiście, oto zmodyfikowana architektura zgodnie z Twoimi wytycznymi:
+
+1. Tabela "Customers":
+   - Customer ID (klucz główny, typ: VARCHAR, NOT NULL)
+   - Customer Name (typ: VARCHAR, NOT NULL)
+   - Segment (typ: VARCHAR)
+
+2. Tabela "Orders":
+   - Order ID (klucz główny, typ: VARCHAR, NOT NULL)
+   - Customer ID (klucz obcy do tabeli "Customers", typ: VARCHAR, NOT NULL)
+   - Country (klucz obcy do tabeli "Geography", typ: VARCHAR, NOT NULL)
+   - Order Date (typ: DATE, NOT NULL)
+   - Ship Date (typ: DATE)
+   - Ship Mode (typ: VARCHAR)
+   - Postal Code (typ: VARCHAR)
+   - City (typ: VARCHAR)
+   - State (typ: VARCHAR)
+
+3. Tabela "Order Details":
+   - Order Detail ID (klucz główny, typ: VARCHAR, NOT NULL)
+   - Order ID (klucz obcy do tabeli "Orders", typ: VARCHAR, NOT NULL)
+   - Product ID (klucz obcy do tabeli "Products", typ: VARCHAR, NOT NULL)
+   - Sales (typ: DECIMAL)
+   - Quantity (typ: INTEGER)
+   - Discount (typ: DECIMAL)
+   - Profit (typ: DECIMAL)
+   - Shipping Cost (typ: DECIMAL)
+
+4. Tabela "Geography":
+   - Country (klucz główny, typ: VARCHAR, NOT NULL)
+   - Market (typ: VARCHAR, NOT NULL)
+
+5. Tabela "Products":
+   - Product ID (klucz główny, typ: VARCHAR, NOT NULL)
+   - Category (typ: VARCHAR, NOT NULL)
+   - Sub-Category (typ: VARCHAR, NOT NULL)
+   - Product Name (typ: VARCHAR, NOT NULL)
+
+Relacje między tabelami:
+- Tabela "Orders" ma relację wiele-do-jednego z tabelą "Customers" poprzez klucz obcy "Customer ID".
+- Tabela "Orders" ma relację wiele-do-jednego z tabelą "Geography" poprzez klucz obcy "Country".
+- Tabela "Order Details" ma relację wiele-do-jednego z tabelą "Orders" poprzez klucz obcy "Order ID".
+- Tabela "Order Details" ma relację wiele-do-jednego z tabelą "Products" poprzez klucz obcy "Product ID".
+
+W tej architekturze:
+- Informacje o adresie dostawy zostały przeniesione do tabeli "Orders", co eliminuje potrzebę oddzielnej tabeli "Addresses".
+- Utworzono nową tabelę "Order Details", która przechowuje szczegóły zamówienia, takie jak sprzedaż, ilość, rabat, zysk i koszt wysyłki. To odciąża tabelę "Orders" i umożliwia przechowywanie wielu produktów dla jednego zamówienia.
+- Metoda wysyłki (Ship Mode) została przeniesiona z powrotem do tabeli "Orders".
+
+Ta architektura zapewnia bardziej zwartą strukturę i eliminuje potrzebę dodatkowych tabel, jednocześnie zachowując wszystkie niezbędne informacje. Nadal można generować szczegółowe statystyki i analizy na podstawie danych adresowych i szczegółów zamówienia.
+
+Pamiętaj, że ta propozycja wykorzystuje tylko istniejące pola z pliku data.xlsx i wprowadza minimalne zmiany w stosunku do oryginalnej struktury danych.
