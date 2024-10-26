@@ -1,4 +1,4 @@
-Zadanie polega na zdefiniowaniu następujących obiektów w bazie OrderDB
+Zadanie polega na zdefiniowaniu następujących obiektów w bazie OrderDB (Tą które stworzyliśmy niedawno)
 
 1. Utworzenie indeksu zgrupowanego oraz indeksu niezgrupowanego (w komentarzu skryptu wynikowego dla Zadanie 03 należy uzasadnić powód założenia konkretnego typu indeksu na wybranej strukturze)
 
