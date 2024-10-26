@@ -1,3 +1,177 @@
+Oto rozwiązanie zadania dla bazy OrderDB w PostgreSQL:
+
+```sql
+/*
+ZADANIE 03 - Indeksy i procedury analityczne dla bazy OrderDB
+*/
+
+-- 1. Indeksy zgrupowany i niezgrupowany
+/*
+W PostgreSQL nie ma bezpośredniego odpowiednika indeksu zgrupowanego jak w SQL Server,
+ale PRIMARY KEY automatycznie tworzy indeks, który zachowuje się podobnie.
+Dodatkowo tworzymy indeks niezgrupowany na często wyszukiwanych kolumnach.
+
+Uzasadnienie:
+- Order_Date jest często używane w zapytaniach analitycznych i filtrowania
+- Ship_Date jest używane do analiz czasów dostaw
+- Połączenie tych dat w jednym indeksie pozwala na efektywne wyszukiwanie zamówień w określonych przedziałach czasowych
+*/
+
+-- Indeks niezgrupowany na datach w Orders
+CREATE INDEX idx_orders_dates 
+ON Orders (Order_Date, Ship_Date);
+
+-- 2. Indeksy gęsty i rzadki
+/*
+Uzasadnienie:
+- Indeks gęsty na Product_Name, bo każda wartość jest unikalna i często wyszukiwana
+- Indeks rzadki na Category, bo ma niewiele unikalnych wartości i jest używana do grupowania
+*/
+
+-- Indeks gęsty na Product_Name
+CREATE INDEX idx_dense_product_name 
+ON Products (Product_Name);
+
+-- Indeks rzadki na Category z INCLUDE
+CREATE INDEX idx_sparse_category 
+ON Products (Category) INCLUDE (Sub_Category);
+
+-- 3. Indeks kolumnowy
+/*
+Uzasadnienie:
+Indeks kolumnowy jest szczególnie użyteczny dla:
+- Analiz agregujących duże ilości danych
+- Zapytań raportowych wykorzystujących niewiele kolumn z tabeli
+- Danych, które rzadko są modyfikowane
+- Kolumn często używanych w klauzulach GROUP BY i agregacjach
+
+W tym przypadku tworzymy indeks kolumnowy na kolumnach używanych w analizach sprzedażowych
+*/
+
+CREATE INDEX idx_columnar_sales_analysis 
+ON Orders USING columnar (
+    Sales,
+    Profit,
+    Discount,
+    Order_Date
+);
+
+-- 4. Procedura zwracająca zamówienia dla podkategorii i kraju
+CREATE OR REPLACE FUNCTION get_orders_by_subcategory_and_country(
+    p_subcategory VARCHAR,
+    p_country VARCHAR
+)
+RETURNS TABLE (
+    order_id VARCHAR,
+    order_date DATE,
+    ship_date DATE,
+    product_name VARCHAR,
+    sales FLOAT,
+    quantity INT,
+    profit FLOAT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        o.Order_ID,
+        o.Order_Date,
+        o.Ship_Date,
+        p.Product_Name,
+        o.Sales,
+        oi.Quantity,
+        o.Profit
+    FROM Orders o
+    JOIN Order_Items oi ON o.Order_ID = oi.Order_ID
+    JOIN Products p ON oi.Product_ID = p.Product_ID
+    WHERE p.Sub_Category = p_subcategory
+    AND o.Country = p_country
+    ORDER BY o.Order_Date DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 5. Procedura zwracająca dwa najnowsze zamówienia dla klientów Consumer
+CREATE OR REPLACE FUNCTION get_latest_consumer_orders()
+RETURNS TABLE (
+    order_id VARCHAR,
+    order_date DATE,
+    product_name VARCHAR,
+    sales FLOAT,
+    customer_name VARCHAR,
+    row_num BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH RankedOrders AS (
+        SELECT 
+            o.Order_ID,
+            o.Order_Date,
+            p.Product_Name,
+            o.Sales,
+            c.Customer_Name,
+            ROW_NUMBER() OVER (
+                PARTITION BY c.Customer_ID 
+                ORDER BY o.Order_Date DESC, o.Order_ID DESC
+            ) as rn
+        FROM Orders o
+        JOIN Order_Items oi ON o.Order_ID = oi.Order_ID
+        JOIN Products p ON oi.Product_ID = p.Product_ID
+        JOIN Customers c ON o.Customer_ID = c.Customer_ID
+        WHERE c.Segment = 'Consumer'
+    )
+    SELECT 
+        Order_ID,
+        Order_Date,
+        Product_Name,
+        Sales,
+        Customer_Name,
+        rn
+    FROM RankedOrders
+    WHERE rn <= 2
+    ORDER BY Customer_Name, Order_Date DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykłady użycia:
+/*
+-- Wyszukiwanie zamówień dla podkategorii i kraju
+SELECT * FROM get_orders_by_subcategory_and_country('Phones', 'United States');
+
+-- Pobieranie dwóch najnowszych zamówień dla klientów Consumer
+SELECT * FROM get_latest_consumer_orders();
+*/
+
+/*
+Dodatkowe indeksy wspierające zapytania:
+*/
+
+-- Indeks dla wyszukiwania zamówień po podkategorii i kraju
+CREATE INDEX idx_orders_subcategory_country
+ON Orders (Country)
+INCLUDE (Order_Date, Ship_Date, Sales, Profit);
+
+CREATE INDEX idx_products_subcategory
+ON Products (Sub_Category)
+INCLUDE (Product_Name);
+
+-- Indeks dla wyszukiwania zamówień konsumenckich
+CREATE INDEX idx_customers_segment
+ON Customers (Segment)
+INCLUDE (Customer_Name);
+
+CREATE INDEX idx_orders_customer_date
+ON Orders (Customer_ID, Order_Date DESC)
+INCLUDE (Sales);
+```
+
+Dodatkowe uwagi:
+1. Wszystkie indeksy są zoptymalizowane pod kątem najczęstszych zapytań
+2. Użyto INCLUDE dla dodatkowych kolumn, aby uniknąć lookup-ów
+3. Indeksy kolumnowe są szczególnie przydatne dla analiz historycznych
+4. Procedury zawierają optymalne ścieżki dostępu do danych
+5. Dodano indeksy wspierające konkretne przypadki użycia
+
+Przed wdrożeniem należy przetestować wydajność na reprezentatywnym zbiorze danych.
+
 Order_Date:
 - Wiele zamówień może mieć tę samą datę
 - Niska selektywność (kardynalność)

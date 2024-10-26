@@ -70,7 +70,6 @@ CREATE TABLE Order_Items (
 CREATE OR REPLACE FUNCTION is_valid_customer_id(id VARCHAR) 
 RETURNS BOOLEAN AS $$
 BEGIN
-    -- Format: XX-XXXXXXX (2 wielkie litery, myślnik, 7 cyfr)
     RETURN id ~ '^[A-Z]{2}-[0-9]{7}$';
 END;
 $$ LANGUAGE plpgsql;
@@ -78,8 +77,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION is_valid_order_id(id VARCHAR) 
 RETURNS BOOLEAN AS $$
 BEGIN
-    -- Format: XX-YYYY-XXXXXXXXXX-XXXXX 
-    -- (2 wielkie litery, rok, ID klienta, 5 cyfr)
     RETURN id ~ '^[A-Z]{2}-[0-9]{4}-[A-Z0-9]+-[0-9]{5}$';
 END;
 $$ LANGUAGE plpgsql;
@@ -87,8 +84,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION is_valid_product_id(id VARCHAR) 
 RETURNS BOOLEAN AS $$
 BEGIN
-    -- Format: XXX-XX-XXXX 
-    -- (3 wielkie litery, myślnik, 2 wielkie litery, myślnik, 4 cyfry)
     RETURN id ~ '^[A-Z]{3}-[A-Z]{2}-[0-9]{4}$';
 END;
 $$ LANGUAGE plpgsql;
@@ -114,7 +109,6 @@ ALTER TABLE Products
 CREATE OR REPLACE FUNCTION generate_category_code(category_name VARCHAR)
 RETURNS VARCHAR AS $$
 BEGIN
-    -- Pobiera pierwsze 3 litery kategorii i zamienia na wielkie litery
     RETURN UPPER(LEFT(REGEXP_REPLACE(category_name, '[^a-zA-Z]', '', 'g'), 3));
 END;
 $$ LANGUAGE plpgsql;
@@ -122,7 +116,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION generate_subcategory_code(subcategory_name VARCHAR)
 RETURNS VARCHAR AS $$
 BEGIN
-    -- Pobiera pierwsze 2 litery podkategorii i zamienia na wielkie litery
     RETURN UPPER(LEFT(REGEXP_REPLACE(subcategory_name, '[^a-zA-Z]', '', 'g'), 2));
 END;
 $$ LANGUAGE plpgsql;
@@ -188,7 +181,7 @@ BEGIN
     FROM Orders;
 
     v_customer_id_for_order := REPLACE(p_customer_id, '-', '');
-    -- Generowanie Order ID w odpowiednim formacie
+
     v_order_id := FORMAT('%s-%s-%s-%s',
         v_country_code,
         EXTRACT(YEAR FROM CURRENT_DATE)::TEXT,
@@ -205,7 +198,7 @@ BEGIN
         p_postal_code, p_city, p_state, 0, 0, 0, 0
     );
 
-    -- Dodawanie produktów do zamówienia
+
     FOR v_product_record IN SELECT * FROM json_array_elements(p_products_array)
     LOOP
         INSERT INTO Order_Items (Order_ID, Product_ID, Quantity)
@@ -231,16 +224,13 @@ DECLARE
     v_sequence_number INT;
     v_customer_id VARCHAR(50);
 BEGIN
-    -- Generowanie inicjałów
     v_initials := UPPER(LEFT(p_first_name, 1) || LEFT(p_last_name, 1));
     
-    -- Pobranie najwyższego numeru sekwencyjnego dla danych inicjałów
     SELECT COALESCE(MAX(CAST(SUBSTRING(Customer_ID FROM 4) AS INTEGER)), 2170000)
     INTO v_sequence_number
     FROM Customers
     WHERE Customer_ID LIKE v_initials || '-%';
     
-    -- Utworzenie nowego ID
     v_customer_id := FORMAT('%s-%s', v_initials, (v_sequence_number + 1)::TEXT);
     
     RETURN v_customer_id;
@@ -252,19 +242,15 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION verify_customer_id()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Sprawdzenie czy inicjały odpowiadają nazwie klienta
     DECLARE
         expected_initials VARCHAR(2);
         actual_initials VARCHAR(2);
         name_parts TEXT[];
     BEGIN
-        -- Rozdzielenie imienia i nazwiska
         name_parts := string_to_array(NEW.Customer_Name, ' ');
         
-        -- Pobranie inicjałów z nazwy
         expected_initials := UPPER(LEFT(name_parts[1], 1) || LEFT(name_parts[array_length(name_parts, 1)], 1));
         
-        -- Pobranie inicjałów z ID
         actual_initials := SPLIT_PART(NEW.Customer_ID, '-', 1);
         
         IF expected_initials != actual_initials THEN
@@ -311,18 +297,15 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION verify_product_id()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Sprawdzenie czy kody kategorii odpowiadają rzeczywistym kategoriom
     DECLARE
         expected_category_code VARCHAR(3);
         actual_category_code VARCHAR(3);
         expected_subcategory_code VARCHAR(2);
         actual_subcategory_code VARCHAR(2);
     BEGIN
-        -- Generowanie oczekiwanych kodów
         expected_category_code := generate_category_code(NEW.Category);
         expected_subcategory_code := generate_subcategory_code(NEW.Sub_Category);
         
-        -- Pobranie aktualnych kodów z ID
         actual_category_code := SPLIT_PART(NEW.Product_ID, '-', 1);
         actual_subcategory_code := SPLIT_PART(NEW.Product_ID, '-', 2);
         
@@ -363,19 +346,15 @@ DECLARE
     v_second_product_id VARCHAR(50);
     v_customer_id VARCHAR(50);
 BEGIN
-    -- Wprowadzenie przykładowych danych geograficznych
     INSERT INTO Geography VALUES ('Poland', 'EU') ON CONFLICT DO NOTHING;
     
-    -- Generowanie Customer ID i wprowadzenie klienta
     v_customer_id := generate_customer_id('John', 'Smith');
     
     INSERT INTO Customers VALUES 
     (v_customer_id, 'John Smith', 'Consumer') ON CONFLICT DO NOTHING;
     
-    -- Wywołanie procedury dodającej produkty
     CALL test_add_products();
     
-    -- Pobranie ID dwóch ostatnio dodanych produktów
     SELECT Product_ID INTO v_first_product_id
     FROM Products
     ORDER BY Product_ID DESC
@@ -387,7 +366,6 @@ BEGIN
     ORDER BY Product_ID DESC
     LIMIT 1;
 
-    -- Wywołanie procedury tworzenia zamówienia
     CALL create_order(
         v_customer_id,
         'Poland',
