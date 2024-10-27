@@ -142,7 +142,6 @@ BEGIN
         LPAD(v_sequence_number::TEXT, 4, '0')
     );
     
-    -- Wstawienie nowego produktu
     INSERT INTO Products (Product_ID, Category, Sub_Category, Product_Name)
     VALUES (v_product_id, p_category, p_subcategory, p_product_name);
     
@@ -282,11 +281,9 @@ BEGIN
                 actual_year, order_year;
         END IF;
         
-        -- Normalizacja Customer ID (usunięcie myślnika)
         customer_id_from_order := SPLIT_PART(NEW.Order_ID, '-', 3);
         customer_id_normalized := REPLACE(NEW.Customer_ID, '-', '');
         
-        -- Sprawdzenie czy znormalizowane ID są zgodne
         IF customer_id_from_order != customer_id_normalized THEN
             RAISE EXCEPTION 'Nieprawidłowy Customer ID w Order ID. Oczekiwano: %, otrzymano: %', 
                 customer_id_normalized, customer_id_from_order;
