@@ -37,8 +37,8 @@ WITH DATA;
 CREATE UNIQUE INDEX idx_active_customers_id ON active_customers (Customer_ID);
 
 
-ALTER TABLE Products
-ALTER COLUMN Product_Name
+ALTER TABLE Customers
+ALTER COLUMN Customer_Name
 SET STORAGE EXTENDED;
 
 
@@ -78,17 +78,14 @@ DECLARE
     next_quarter_end DATE;
     partition_name TEXT;
 BEGIN
-    -- Obliczenie dat następnego kwartału
     next_quarter_start := date_trunc('quarter', CURRENT_DATE + interval '3 months');
     next_quarter_end := next_quarter_start + interval '3 months';
     
-    -- Utworzenie nazwy partycji
     partition_name := 'orders_q' || 
                      EXTRACT(QUARTER FROM next_quarter_start) ||
                      '_' || 
                      EXTRACT(YEAR FROM next_quarter_start);
     
-    -- Utworzenie partycji
     EXECUTE format(
         'CREATE TABLE IF NOT EXISTS %I PARTITION OF Orders_Partitioned
          FOR VALUES FROM (%L) TO (%L)',
