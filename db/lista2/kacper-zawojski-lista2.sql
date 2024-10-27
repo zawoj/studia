@@ -103,8 +103,6 @@ ALTER TABLE Products
     CHECK (is_valid_product_id(Product_ID));
 
 
-
-
 -- TWORZENIE PRODUKTU ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION generate_category_code(category_name VARCHAR)
 RETURNS VARCHAR AS $$
@@ -161,7 +159,11 @@ CREATE OR REPLACE PROCEDURE create_order(
     p_postal_code VARCHAR(20),
     p_city VARCHAR(100),
     p_state VARCHAR(100),
-    p_products_array JSON
+    p_products_array JSON,
+    p_shipping_cost FLOAT DEFAULT 0,
+    p_profit FLOAT DEFAULT 0,
+    p_discount FLOAT DEFAULT 0,
+    p_sales FLOAT DEFAULT 0
 )
 LANGUAGE plpgsql
 AS $$
@@ -195,7 +197,7 @@ BEGIN
     )
     VALUES (
         v_order_id, p_customer_id, p_country, CURRENT_DATE, p_ship_mode,
-        p_postal_code, p_city, p_state, 0, 0, 0, 0
+        p_postal_code, p_city, p_state, p_shipping_cost, p_profit, p_discount, p_sales
     );
 
 
@@ -376,7 +378,11 @@ BEGIN
         format('[
             {"product_id": "%s", "quantity": 1},
             {"product_id": "%s", "quantity": 2}
-        ]', v_first_product_id, v_second_product_id)::JSON
+        ]', v_first_product_id, v_second_product_id)::JSON,
+        10.0, 
+        5.0,  
+        0.1,  
+        100.0 
     );
 END;
 $$;
@@ -415,6 +421,8 @@ BEGIN
 END;
 $$;
 
+CALL test_order_creation()
 
+-- CALL test_add_products()
 -- RUN TEST ORDER CALL test_order_creation();
 -- RUN TEST CREATE PRODUCT CALL test_add_products();

@@ -39,9 +39,6 @@ ON Orders (Customer_ID);
 CREATE INDEX idx_sparse_product_categories 
 ON Products (Category, Sub_Category);
 
-
-CREATE EXTENSION citus;
-
 -- 3. Indeks kolumnowy
 /*
 Uzasadnienie:
@@ -50,20 +47,28 @@ Sales i Profit są idealnymi kandydatami, bo:
 - Rzadko modyfikowane
 - Kluczowe w analizach biznesowych
 */
-CREATE INDEX idx_columnar_financial 
-ON Orders USING columnar (
-    Sales,
-    Profit,
-    Customer_ID 
-);
+-- Uzasadnienie:
+-- BRIN (Block Range INdex) jest bardzo efektywny dla:
+-- - Danych analitycznych
+-- - Danych, które mają naturalną korelację (np. daty, sekwencyjne ID)
+-- - Kolumn używanych głównie do agregacji
+-- - Dużych tabel, gdzie pełne skanowanie jest kosztowne
 
-CREATE INDEX idx_columnar_sales_analysis 
-ON Orders USING columnar (
+-- Zalety BRIN:
+-- - Bardzo mały rozmiar indeksu
+-- - Dobra wydajność dla zapytań analitycznych
+-- - Niski koszt utrzymania
+-- - Efektywny dla sekwencyjnie uporządkowanych danych
+-- */
+
+-- Indeks BRIN dla danych finansowych
+CREATE INDEX idx_orders_financial_brin ON Orders 
+USING BRIN (
+    Order_Date,
     Sales,
-    Profit,
-    Discount,
-    Order_Date
-);
+    Profit
+) WITH (pages_per_range = 128);
+
 
 -- 4. Procedura zwracająca zamówienia dla podkategorii i kraju
 CREATE OR REPLACE FUNCTION get_orders_by_subcategory_and_country(
@@ -112,7 +117,7 @@ BEGIN
     RETURN QUERY
     WITH RankedOrders AS (
         SELECT 
-            o.Order_ID,
+            o.Order_ID,  -- Specify the table alias here
             o.Order_Date,
             p.Product_Name,
             o.Sales,
@@ -128,12 +133,12 @@ BEGIN
         WHERE c.Segment = 'Consumer'
     )
     SELECT 
-        Order_ID,
-        Order_Date,
-        Product_Name,
-        Sales,
-        Customer_Name,
-        rn
+        RankedOrders.Order_ID,  -- Specify the CTE alias here
+        RankedOrders.Order_Date,
+        RankedOrders.Product_Name,
+        RankedOrders.Sales,
+        RankedOrders.Customer_Name,
+        RankedOrders.rn
     FROM RankedOrders
     WHERE rn <= 2
     ORDER BY Customer_Name, Order_Date DESC;
@@ -143,8 +148,10 @@ $$ LANGUAGE plpgsql;
 -- Przykłady użycia:
 /*
 -- Wyszukiwanie zamówień dla podkategorii i kraju
+*/
 SELECT * FROM get_orders_by_subcategory_and_country('Phones', 'United States');
 
+/*
 -- Pobieranie dwóch najnowszych zamówień dla klientów Consumer
-SELECT * FROM get_latest_consumer_orders();
 */
+SELECT * FROM get_latest_consumer_orders();
