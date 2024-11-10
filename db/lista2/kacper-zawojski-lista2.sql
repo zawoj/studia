@@ -173,9 +173,7 @@ DECLARE
     v_sequence_number INT;
     v_customer_id_for_order VARCHAR(50);
 BEGIN
-
     v_country_code := UPPER(LEFT(p_country, 2));
-
 
     SELECT COALESCE(MAX(CAST(SPLIT_PART(Order_ID, '-', 4) AS INTEGER)), 40000) + 1
     INTO v_sequence_number
@@ -199,7 +197,6 @@ BEGIN
         p_postal_code, p_city, p_state, p_shipping_cost, p_profit, p_discount, p_sales
     );
 
-
     FOR v_product_record IN SELECT * FROM json_array_elements(p_products_array)
     LOOP
         INSERT INTO Order_Items (Order_ID, Product_ID, Quantity)
@@ -209,7 +206,6 @@ BEGIN
             (v_product_record->>'quantity')::INT
         );
     END LOOP;
-
 EXCEPTION 
     WHEN OTHERS THEN
         RAISE EXCEPTION 'Error when creating an order: %', SQLERRM;

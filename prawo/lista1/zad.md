@@ -12,6 +12,10 @@ Studentów kierunku Automatyka proszę o przesłanie odpowiedzi na dowolne 2 zad
 ZADANIE 1.
 Jak działa cena minimalna i maksymalna?
 
+Cena minimalna to najniższa możliwa cena, po której można sprzedawać dany produkt lub usługę, ustalana przez rząd. Ma na celu ochronę producentów przed zbyt niskimi cenami, które mogłyby prowadzić do strat finansowych. Przykładem ceny minimalnej jest płaca minimalna.
+
+Cena maksymalna to najwyższa możliwa cena, po której można sprzedawać dany produkt lub usługę, również ustalana przez rząd. Ma na celu ochronę konsumentów przed zbyt wysokimi cenami, które mogłyby ograniczyć dostępność dóbr i usług. Przykładem ceny maksymalnej jest kontrola cen leków na receptę.
+
 ZADANIE 2.
 Jakie są wady i zalety poszczególnym mediów dla reklamy?
 
@@ -27,28 +31,6 @@ Krótkookresowa funkcja kosztów całkowitych ma postać C(y)=y^2 + 1:
 7. dla jakiej wielkości produkcji firma osiąga minimum kosztów przeciętnych i ile
 one wynoszą.
 
--Koszty stałe w tej funkcji to wartość 1, która nie zależy od wielkości produkcji. Jest to stała wartość ponoszona niezależnie od tego, czy firma produkuje czy nie.
-
-Koszty zmienne reprezentowane są przez składnik y^2, który rośnie wraz ze wzrostem produkcji. Ich wartość jest bezpośrednio powiązana z wielkością produkcji.
-
-Przeciętny koszt całkowity (ATC) otrzymujemy dzieląc koszty całkowite przez wielkość produkcji:
-ATC = (y^2 + 1)/y = y + 1/y
-
-Przeciętny koszt stały (AFC) to koszty stałe podzielone przez wielkość produkcji:
-AFC = 1/y
-
-Przeciętny koszt zmienny (AVC) to koszty zmienne podzielone przez wielkość produkcji:
-AVC = y^2/y = y
-
-Koszt krańcowy (MC) to pochodna funkcji kosztów całkowitych:
-MC = 2y
-
-Minimum kosztów przeciętnych znajdujemy poprzez przyrównanie kosztu krańcowego do kosztu przeciętnego:
-2y = y + 1/y
-y^2 = 1
-y = 1
-
-Przy produkcji y=1 firma osiąga minimum kosztów przeciętnych wynoszące 2 jednostki.
 
 ZADANIE 4.
 Co to jest i jakie funkcje spełnia intranet
