@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-read --allow-env src/main.ts",
+    "import": "deno run --allow-net --allow-read --allow-env src/import.ts"
+  },
+  "imports": {
+    "mongodb": "npm:mongodb@6.3.0"
+  }
+}
