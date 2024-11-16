@@ -31,7 +31,7 @@ powierzchnia jest dużo mniejsza niż w umowie
 Ale uwaga - nie każda pomyłka się liczy. Błąd musi być na tyle poważny, że gdyby Hildegarda wiedziała jak jest naprawdę, w życiu by tej umowy nie podpisała. I co ważne - nie może się tłumaczyć tym, że sprzedający o czymś nie powiedział, jeśli sama nie sprawdziła podstawowych rzeczy przed zakupem.
 Najlepiej będzie, jeśli Hildegarda pójdzie do notariusza i tam oficjalnie wycofa się z umowy. To da jej pewność, że wszystko jest zrobione zgodnie z prawem.
 
-Jeśli sprzedający celowo wprowadził Hildegardę w błąd (na przykład wiedział o jakichś wadach i specjalnie o nich nie powiedział), to jest to już nie zwykły błąd, ale podstęp - i to jest traktowane przez prawo jeszcze poważniej..
+Jeśli sprzedający celowo wprowadził Hildegardę w błąd (na przykład wiedział o jakichś wadach i specjalnie o nich nie powiedział), to jest to już nie zwykły błąd, ale podstęp - i to jest traktowane przez prawo jeszcze poważniej.
 
 ## ZADANIE 3.
 A sprzedał B obraz znanego malarza. Po sprzedaży okazało się, że obraz został podrobiony, o czym strony nie wiedziały.

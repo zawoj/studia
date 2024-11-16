@@ -10,27 +10,27 @@ try {
 
   // Create indexes for better performance
   const db: Database = client.database("jobs");
-  
-  await db.collection("locations").createIndexes([
-    { key: { city: 1 } },
-    { key: { country: 1 } }
-  ]);
 
-  await db.collection("organizations").createIndexes([
-    { key: { name: 1 } },
-    { key: { source: 1 } }
-  ]);
+  // await db.collection("locations").createIndexes([
+  //   { key: { city: 1 } },
+  //   { key: { country: 1 } }
+  // ]);
 
-  await db.collection("jobPositions").createIndexes([
-    { key: { organizationId: 1 } },
-    { key: { name: 1 } }
-  ]);
+  // await db.collection("organizations").createIndexes([
+  //   { key: { name: 1 } },
+  //   { key: { source: 1 } }
+  // ]);
 
-  await db.collection("jobOffers").createIndexes([
-    { key: { positionId: 1 } },
-    { key: { organizationId: 1 } },
-    { key: { dateCreated: -1 } }
-  ]);
+  // await db.collection("jobPositions").createIndexes([
+  //   { key: { organizationId: 1 } },
+  //   { key: { name: 1 } }
+  // ]);
+
+  // await db.collection("jobOffers").createIndexes([
+  //   { key: { positionId: 1 } },
+  //   { key: { organizationId: 1 } },
+  //   { key: { dateCreated: -1 } }
+  // ]);
 
 } catch (err) {
   console.error("Error connecting to MongoDB:", err);

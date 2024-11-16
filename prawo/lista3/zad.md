@@ -18,7 +18,6 @@ Robert zamówił telefonicznie do swojego sklepu u Filipa 20 butelek czerwonego 
 ## ODP
 To zależy od tego, jak spojrzymy na proces zawarcia umowy i znaczenie różnicy w roczniku wina.
 Mamy tu do czynienia z dwoma momentami:
-
 pierwszym, gdy Robert telefonicznie zamówił wino z 2001 roku
 drugim, gdy przyjął potwierdzenie zamówienia z innym rocznikiem (2002)
 

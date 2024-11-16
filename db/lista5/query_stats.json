@@ -1,0 +1,98 @@
+[
+  {
+    "queryName": "jobOffers findone",
+    "avgTime": 8.21,
+    "minTime": 1.96,
+    "maxTime": 47.34
+  },
+  {
+    "queryName": "jobOffers sort by name",
+    "avgTime": 46441.32,
+    "minTime": 44361.21,
+    "maxTime": 48832.88
+  },
+  {
+    "queryName": "Complex query",
+    "avgTime": 2610.17,
+    "minTime": 2283.27,
+    "maxTime": 2840.98
+  },
+  {
+    "queryName": "Industry specific offers",
+    "avgTime": 46043.97,
+    "minTime": 45626.11,
+    "maxTime": 46806.55
+  },
+  {
+    "queryName": "Salary analysis by location",
+    "avgTime": 84976.98,
+    "minTime": 83619.68,
+    "maxTime": 87017.43
+  },
+  {
+    "queryName": "Most active recruiting organizations",
+    "avgTime": 44778.82,
+    "minTime": 43549.23,
+    "maxTime": 46687.29
+  },
+  {
+    "queryName": "Similar position requirements",
+    "avgTime": 945.82,
+    "minTime": 896.53,
+    "maxTime": 1152.17
+  },
+  {
+    "queryName": "Recruitment trends analysis",
+    "avgTime": 44393.62,
+    "minTime": 43342.16,
+    "maxTime": 46002
+  },
+  {
+    "queryName": "Organizations by source",
+    "avgTime": 2.74,
+    "minTime": 1.65,
+    "maxTime": 9.38
+  },
+  {
+    "queryName": "Organizations with media",
+    "avgTime": 1.98,
+    "minTime": 1.51,
+    "maxTime": 3.21
+  },
+  {
+    "queryName": "Locations by country",
+    "avgTime": 1.67,
+    "minTime": 1.43,
+    "maxTime": 1.97
+  },
+  {
+    "queryName": "Locations with coordinates",
+    "avgTime": 1051.55,
+    "minTime": 1024.62,
+    "maxTime": 1150.45
+  },
+  {
+    "queryName": "Positions by contract type",
+    "avgTime": 339.77,
+    "minTime": 310.89,
+    "maxTime": 460.39
+  },
+  {
+    "queryName": "Complex position query",
+    "avgTime": 945.9,
+    "minTime": 915.26,
+    "maxTime": 1032.22
+  },
+  {
+    "queryName": "Organization location distribution",
+    "avgTime": 103444.34,
+    "minTime": 99327.65,
+    "maxTime": 106552.49
+  },
+  {
+    "queryName": "Department statistics",
+    "avgTime": 7159.17,
+    "minTime": 6915.53,
+    "maxTime": 7722.71
+  }
+]
