@@ -1,7 +1,7 @@
 import { Database } from "https://deno.land/x/mongo@v0.31.2/mod.ts";
 import { MongoClient } from "./deps.ts";
 
-const uri = "mongodb://root:example@localhost:27017"; // Using port from docker-compose
+const uri = "mongodb://root:example@localhost:27017";
 const client = new MongoClient();
 
 try {
