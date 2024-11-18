@@ -1,0 +1,98 @@
+[
+  {
+    "queryName": "jobOffers findone",
+    "avgTime": 5.89,
+    "minTime": 1.09,
+    "maxTime": 42.62
+  },
+  {
+    "queryName": "jobOffers sort by name",
+    "avgTime": 8.41,
+    "minTime": 4.19,
+    "maxTime": 23.71
+  },
+  {
+    "queryName": "Complex query",
+    "avgTime": 5.02,
+    "minTime": 2.35,
+    "maxTime": 20.96
+  },
+  {
+    "queryName": "Industry specific offers",
+    "avgTime": 51704.92,
+    "minTime": 43433.07,
+    "maxTime": 67691.46
+  },
+  {
+    "queryName": "Salary analysis by location",
+    "avgTime": 80500.25,
+    "minTime": 76666.77,
+    "maxTime": 93459.65
+  },
+  {
+    "queryName": "Most active recruiting organizations",
+    "avgTime": 2.8,
+    "minTime": 0.76,
+    "maxTime": 18.11
+  },
+  {
+    "queryName": "Similar position requirements",
+    "avgTime": 909.26,
+    "minTime": 853.78,
+    "maxTime": 1160.97
+  },
+  {
+    "queryName": "Recruitment trends analysis",
+    "avgTime": 2.12,
+    "minTime": 0.84,
+    "maxTime": 9.02
+  },
+  {
+    "queryName": "Organizations by source",
+    "avgTime": 3.01,
+    "minTime": 1.25,
+    "maxTime": 14.37
+  },
+  {
+    "queryName": "Organizations with media",
+    "avgTime": 1.54,
+    "minTime": 1.18,
+    "maxTime": 2.26
+  },
+  {
+    "queryName": "Locations by country",
+    "avgTime": 1.75,
+    "minTime": 1.24,
+    "maxTime": 4.97
+  },
+  {
+    "queryName": "Locations with coordinates",
+    "avgTime": 1010,
+    "minTime": 970.84,
+    "maxTime": 1158.23
+  },
+  {
+    "queryName": "Positions by contract type",
+    "avgTime": 303.75,
+    "minTime": 276.93,
+    "maxTime": 394.57
+  },
+  {
+    "queryName": "Complex position query",
+    "avgTime": 897.37,
+    "minTime": 867.12,
+    "maxTime": 952.76
+  },
+  {
+    "queryName": "Organization location distribution",
+    "avgTime": 101587.85,
+    "minTime": 97310.94,
+    "maxTime": 105414.11
+  },
+  {
+    "queryName": "Department statistics",
+    "avgTime": 6683.26,
+    "minTime": 6361.13,
+    "maxTime": 7471.59
+  }
+]

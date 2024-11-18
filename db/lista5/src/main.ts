@@ -1,4 +1,5 @@
 import db from "./db.ts";
+import { JobOfferModel, JobPositionModel, LocationModel, OrganizationModel } from "./types.ts";
 
 
 interface QueryResult {
@@ -38,7 +39,6 @@ function calculateStats(results: QueryResult[]): QueryStats[] {
     queryGroups.get(result.queryName)?.push(result.duration);
   });
 
-  // Oblicz statystyki dla każdej grupy
   return Array.from(queryGroups.entries()).map(([queryName, times]) => ({
     queryName,
     avgTime: Number((times.reduce((a, b) => a + b, 0) / times.length).toFixed(2)),
@@ -56,6 +56,48 @@ async function main() {
   const results: QueryResult[] = [];
 
   try {
+
+    await OrganizationModel.createIndexes({
+      indexes: [
+        { name: "name_index", key: { name: 1 } },
+        { name: "source_index", key: { source: 1 } },
+        { name: "idInSource_index", key: { idInSource: 1 } },
+        { name: "mergedID_index", key: { mergedID: 1 } },
+        { name: "registryID_index", key: { registryID: 1 } },
+      ],
+    });
+
+    await JobPositionModel.createIndexes({
+      indexes: [
+        { name: "organizationId_index", key: { organizationId: 1 } },
+        { name: "name_index", key: { name: 1 } },
+        { name: "locationId_index", key: { locationId: 1 } },
+      ],
+    });
+
+    await JobOfferModel.createIndexes({
+      indexes: [
+        { name: "positionId_index", key: { positionId: 1 } },
+        { name: "organizationId_index", key: { organizationId: 1 } },
+        { name: "dateCreated_index", key: { dateCreated: 1 } },
+        { name: "dateExpired_index", key: { dateExpired: 1 } },
+        { name: "dateScraped_index", key: { dateScraped: 1 } },
+        { name: "idInSource_index", key: { idInSource: 1 } },
+        { name: "referenceID_index", key: { referenceID: 1 } },
+        { name: "source_index", key: { source: 1 } },
+      ],
+    });
+
+    await LocationModel.createIndexes({
+      indexes: [
+        { name: "city_index", key: { city: 1 } },
+        { name: "country_index", key: { country: 1 } },
+        { name: "countryCode_index", key: { countryCode: 1 } },
+        { name: "state_index", key: { state: 1 } },
+        { name: "postCode_index", key: { postCode: 1 } },
+      ],
+    });
+
     console.log("Starting query benchmarks...");
 
     console.log("\nExecuting simple findOne queries...");
@@ -103,7 +145,7 @@ async function main() {
         db.collection('jobOffers').aggregate([
           {
             $match: {
-              "orgTags.industry": "IT" // przykładowa branża
+              "orgTags.industry": "IT"
             }
           },
           {
@@ -291,7 +333,6 @@ async function main() {
       results.push(result);
     }
 
-    // Dodaj te zapytania w main() przed końcowymi obliczeniami statystyk
 
     // Zapytania dla Organizations
     console.log("\nExecuting organization queries...");
@@ -324,12 +365,11 @@ async function main() {
 
     // Locations queries
     console.log("\nExecuting location queries...");
-    // Lokalizacje w określonym kraju
     for (let index = 0; index < loopCount; index++) {
       console.log(`Running location country query iteration ${index + 1}/${loopCount}`);
       const result = await queryTime(`Locations by country`, () =>
         db.collection('locations')
-          .find({ countryCode: "US" }) // przykładowy kod kraju
+          .find({ countryCode: "US" })
           .limit(10)
           .toArray()
       );
@@ -354,12 +394,11 @@ async function main() {
 
     // JobPositions queries
     console.log("\nExecuting job position queries...");
-    // Pozycje według typu kontraktu
     for (let index = 0; index < loopCount; index++) {
       console.log(`Running position contract type query iteration ${index + 1}/${loopCount}`);
       const result = await queryTime(`Positions by contract type`, () =>
         db.collection('jobPositions')
-          .find({ contractType: "FULL_TIME" }) // przykładowy typ kontraktu
+          .find({ contractType: "FULL_TIME" })
           .limit(10)
           .toArray()
       );
