@@ -1,3 +1,5 @@
+t=30
+
 Ts=0.5;
 td=0:Ts:10;
 u_st=ones(size(td));
@@ -22,13 +24,13 @@ sysd_imp=c2d(sys,Ts,'impulse');
 
 figure
 plot(t,yr_imp,t_imp_imp,y_imp_imp,'LineWidth',2);
-title('OdpowiedŸ impulsowa zdyskretyzowanego uk³adu metod¹ impulsow¹');
+title('Odpowiedï¿½ impulsowa zdyskretyzowanego ukï¿½adu metodï¿½ impulsowï¿½');
 
 figure
 plot(t,yr_st,t_st_imp,y_st_imp,'LineWidth',2);
-title('OdpowiedŸ skokowa zdyskretyzowanego uk³adu metod¹ impulsow¹');
+title('Odpowiedï¿½ skokowa zdyskretyzowanego ukï¿½adu metodï¿½ impulsowï¿½');
 
 figure
 plot(t,yr_ln,t_ln_imp,y_ln_imp,'LineWidth',2);
-title('OdpowiedŸ na sygna³ liniowo narastaj¹cy zdyskretyzowanego uk³adu metod¹ impulsow¹');
+title('Odpowiedï¿½ na sygnaï¿½ liniowo narastajï¿½cy zdyskretyzowanego ukï¿½adu metodï¿½ impulsowï¿½');
 
