@@ -23,7 +23,7 @@ for i = 1:length(systems)
     sys_continuous = systems{i};
     
     % Dyskretyzacja metodami odpowiedzi
-    sys_impulse = c2d(sys_continuous, Ts, 'impulse'); % Odpowiednik impulsowy
+    sys_impulse = c2d(sys_continuous, Ts, 'tustin'); % Odpowiednik tustin
     sys_zoh = c2d(sys_continuous, Ts, 'zoh');        % Odpowiednik skokowy (ZOH)
     sys_foh = c2d(sys_continuous, Ts, 'foh');        % Odpowiednik liniowo-narastający (FOH)
     
@@ -36,7 +36,7 @@ for i = 1:length(systems)
 figure('Position', [100 100 800 400]);
 plot(t_continuous, y_cont_impulse, 'k-', 'LineWidth', 2, 'DisplayName', 'Ciągły');
 hold on;
-stairs(t_discrete, y_impulse, 'r--', 'LineWidth', 2, 'DisplayName', 'Impulsowy');
+stairs(t_discrete, y_impulse, 'r--', 'LineWidth', 2, 'DisplayName', 'tustin');
 stairs(t_discrete, y_zoh_impulse, 'b--', 'LineWidth', 2, 'DisplayName', 'ZOH');
 stairs(t_discrete, y_foh_impulse, 'g--', 'LineWidth', 2, 'DisplayName', 'FOH');
 xlabel('Czas [s]');
@@ -56,7 +56,7 @@ saveas(gcf, fullfile('zad3', ['Impulsowa_', titles{i}, '.png']), 'png');
 figure('Position', [100 100 800 400]);
 plot(t_continuous, y_cont_step, 'k-', 'LineWidth', 2, 'DisplayName', 'Ciągły');
 hold on;
-stairs(t_discrete, y_impulse_step, 'r--', 'LineWidth', 2, 'DisplayName', 'Impulsowy');
+stairs(t_discrete, y_impulse_step, 'r--', 'LineWidth', 2, 'DisplayName', 'tustin');
 stairs(t_discrete, y_zoh_step, 'b--', 'LineWidth', 2, 'DisplayName', 'ZOH');
 stairs(t_discrete, y_foh_step, 'g--', 'LineWidth', 2, 'DisplayName', 'FOH');
 xlabel('Czas [s]');
@@ -78,7 +78,7 @@ saveas(gcf, fullfile('zad3', ['Skokowa_', titles{i}, '.png']), 'png');
 figure('Position', [100 100 800 400]);
 plot(t_continuous, y_cont_ramp, 'k-', 'LineWidth', 2, 'DisplayName', 'Ciągły');
 hold on;
-stairs(t_discrete, y_impulse_ramp, 'r--', 'LineWidth', 2, 'DisplayName', 'Impulsowy');
+stairs(t_discrete, y_impulse_ramp, 'r--', 'LineWidth', 2, 'DisplayName', 'tustin');
 stairs(t_discrete, y_zoh_ramp, 'b--', 'LineWidth', 2, 'DisplayName', 'ZOH');
 stairs(t_discrete, y_foh_ramp, 'g--', 'LineWidth', 2, 'DisplayName', 'FOH');
 xlabel('Czas [s]');

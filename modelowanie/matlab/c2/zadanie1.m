@@ -51,6 +51,14 @@ disp(['Linia 3 - ee: ', num2str(ee3), ', ep: ', num2str(ep3)]);
 hl = legend('Idealna funkcja', 'Zaszumione dane', 'Zidentyfikowana funkcja');
 set(hl, 'FontSize', 10);
 
+% Tworzenie folderu zad1 jeśli nie istnieje
+if ~exist('zad1', 'dir')
+    mkdir('zad1');
+end
+
+% Zapisanie wykresu do pliku PNG
+saveas(gcf, 'zad1/regresja_liniowa.png');
+
 %% 2. Parabole
 disp('Parabole:');
 % Parametry bazowe: y = 0.5x^2 + 0.7x + 0.6
@@ -101,6 +109,9 @@ disp(['Parabola 3 - ee: ', num2str(ee6), ', ep: ', num2str(ep6)]);
 hl = legend('Idealna funkcja', 'Zaszumione dane', 'Zidentyfikowana funkcja');
 set(hl, 'FontSize', 10);
 
+% Zapisanie wykresu do pliku PNG
+saveas(gcf, 'zad1/regresja_paraboliczna.png');
+
 %% 3. Wielomiany 3. rzędu
 disp('Wielomiany 3. rzędu:');
 % Parametry bazowe: y = 0.1x^3 - 0.5x^2 + 0.7x + 0.6
@@ -150,3 +161,6 @@ disp(['Wielomian 3 - ee: ', num2str(ee9), ', ep: ', num2str(ep9)]);
 
 hl = legend('Idealna funkcja', 'Zaszumione dane', 'Zidentyfikowana funkcja');
 set(hl, 'FontSize', 10);
+
+% Zapisanie wykresu do pliku PNG
+saveas(gcf, 'zad1/regresja_3_rzedu.png');

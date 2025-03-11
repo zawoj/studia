@@ -51,6 +51,14 @@ title(['Identyfikacja: a_0 = ', num2str(a0_est_weighted), '°, a_1 = ', num2str(
 legend('Dane pomiarowe (rozmiar ~ n)', 'Regresja bez wag', 'Regresja z wagami');
 grid on;
 
+% Tworzenie folderu zad3 jeśli nie istnieje
+if ~exist('zad3', 'dir')
+    mkdir('zad3');
+end
+
+% Zapisanie wykresu do pliku PNG
+saveas(gcf, 'zad3/krzywa_balansowania.png');
+
 % Wypisanie wyników
 disp('Regresja bez wag:');
 disp(['Estymowane a_0: ', num2str(a0_est), '°']);

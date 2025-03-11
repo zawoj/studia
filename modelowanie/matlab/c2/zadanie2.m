@@ -32,6 +32,14 @@ title(['Identyfikacja: U_0 = ', num2str(U0_est), ' V, a = ', num2str(a_est), ' 1
 legend('Dane pomiarowe', 'Zidentyfikowana funkcja');
 grid on;
 
+% Tworzenie folderu zad2 jeśli nie istnieje
+if ~exist('zad2', 'dir')
+    mkdir('zad2');
+end
+
+% Zapisanie wykresu do pliku PNG
+saveas(gcf, 'zad2/rozladowanie_kondensatora.png');
+
 % Wypisanie wyników
 disp(['Estymowane U_0: ', num2str(U0_est), ' V']);
 disp(['Estymowane a: ', num2str(a_est), ' 1/s']);
