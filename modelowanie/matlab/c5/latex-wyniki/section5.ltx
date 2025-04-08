@@ -1,0 +1,121 @@
+\section{Appendix: Matematyczne podstawy filtru Kalmana}
+\label{sec:Appendix}
+
+W niniejszym dodatku przedstawiono matematyczne podstawy algorytmu filtru Kalmana zastosowanego do identyfikacji parametrów układów dynamicznych.
+
+\subsection{Ogólny model układu dynamicznego}
+
+Ogólny model układu dynamicznego w przestrzeni stanów jest opisany równaniami:
+\begin{align}
+    x(k+1) &= A \cdot x(k) + B \cdot u(k) + w(k) \\
+    y(k) &= C \cdot x(k) + v(k)
+\end{align}
+gdzie:
+\begin{itemize}
+    \item $x(k)$ - wektor stanu układu w chwili $k$
+    \item $u(k)$ - wektor wejścia układu w chwili $k$
+    \item $y(k)$ - wektor wyjścia (pomiarów) układu w chwili $k$
+    \item $A$ - macierz dynamiki układu
+    \item $B$ - macierz wejścia układu
+    \item $C$ - macierz wyjścia układu
+    \item $w(k)$ - wektor szumu procesu, $w(k) \sim \mathcal{N}(0, Q)$
+    \item $v(k)$ - wektor szumu pomiaru, $v(k) \sim \mathcal{N}(0, R)$
+\end{itemize}
+
+\subsection{Klasyczny filtr Kalmana}
+
+Klasyczny filtr Kalmana składa się z dwóch głównych kroków: predykcji i korekcji.
+
+\subsubsection{Krok predykcji}
+\begin{align}
+    \hat{x}^-(k) &= A \cdot \hat{x}(k-1) + B \cdot u(k-1) \\
+    P^-(k) &= A \cdot P(k-1) \cdot A^T + Q
+\end{align}
+
+\subsubsection{Obliczenie wzmocnienia Kalmana}
+\begin{align}
+    K(k) &= P^-(k) \cdot C^T \cdot (C \cdot P^-(k) \cdot C^T + R)^{-1}
+\end{align}
+
+\subsubsection{Krok korekcji}
+\begin{align}
+    \hat{x}(k) &= \hat{x}^-(k) + K(k) \cdot (y(k) - C \cdot \hat{x}^-(k)) \\
+    P(k) &= (I - K(k) \cdot C) \cdot P^-(k)
+\end{align}
+
+\subsection{Filtr Kalmana dla identyfikacji parametrów - podejście z rozszerzonym wektorem stanu}
+
+Dla identyfikacji parametrów wykorzystuje się podejście z rozszerzonym wektorem stanu, gdzie parametry układu są traktowane jako dodatkowe zmienne stanu.
+
+\subsubsection{Układ jednowymiarowy (Zadanie 1)}
+
+W zadaniu 1 model układu ma postać:
+\begin{align}
+    x(k+1) &= a_k \cdot x(k) + u(k) + w(k) \\
+    y(k) &= x(k) + v(k)
+\end{align}
+
+Rozszerzony wektor stanu zawiera zmienną stanu i identyfikowany parametr:
+\begin{align}
+    \begin{bmatrix} x(k+1) \\ a_k(k+1) \end{bmatrix} &= \begin{bmatrix} a_k(k) & 0 \\ 0 & 1 \end{bmatrix} \cdot \begin{bmatrix} x(k) \\ a_k(k) \end{bmatrix} + \begin{bmatrix} 1 \\ 0 \end{bmatrix} \cdot u(k) + \begin{bmatrix} w(k) \\ w_a(k) \end{bmatrix} \\
+    y(k) &= \begin{bmatrix} 1 & 0 \end{bmatrix} \cdot \begin{bmatrix} x(k) \\ a_k(k) \end{bmatrix} + v(k)
+\end{align}
+
+Ponieważ model jest nieliniowy (zawiera iloczyn stanu i parametru), w implementacji zastosowano uproszczone podejście, gdzie parametr $a_k$ jest traktowany jako oddzielny stan, a filtr Kalmana jest zmodyfikowany:
+
+Krok predykcji dla parametru:
+\begin{align}
+    \hat{a}_k^-(k) &= \hat{a}_k(k-1) \\
+    P_a^-(k) &= P_a(k-1) + q_a
+\end{align}
+
+Obliczenie wzmocnienia Kalmana:
+\begin{align}
+    K_a(k) &= \frac{P_a^-(k) \cdot x(k-1)}{x(k-1)^2 \cdot P_a^-(k) + q_w + r_v}
+\end{align}
+
+Krok korekcji dla parametru:
+\begin{align}
+    \hat{a}_k(k) &= \hat{a}_k^-(k) + K_a(k) \cdot (y(k) - \hat{a}_k^-(k) \cdot x(k-1) - u(k-1)) \\
+    P_a(k) &= (1 - K_a(k) \cdot x(k-1)) \cdot P_a^-(k)
+\end{align}
+
+\subsubsection{Układ dwuwymiarowy (Zadanie 2)}
+
+W zadaniu 2 model układu ma postać:
+\begin{align}
+    \begin{bmatrix} x_1(k+1) \\ x_2(k+1) \end{bmatrix} &= \begin{bmatrix} a_{11} & 0.095 \\ -0.19 & 0.9 \end{bmatrix} \cdot \begin{bmatrix} x_1(k) \\ x_2(k) \end{bmatrix} + \begin{bmatrix} 0.005 \\ 0.095 \end{bmatrix} \cdot u(k) + \begin{bmatrix} w_1(k) \\ w_2(k) \end{bmatrix} \\
+    y(k) &= \begin{bmatrix} 1 & 0 \end{bmatrix} \cdot \begin{bmatrix} x_1(k) \\ x_2(k) \end{bmatrix} + v(k)
+\end{align}
+
+Rozszerzony wektor stanu zawiera zmienne stanu i identyfikowany parametr $a_{11}$:
+\begin{align}
+    \begin{bmatrix} x_1(k+1) \\ x_2(k+1) \\ a_{11}(k+1) \end{bmatrix} &= \begin{bmatrix} a_{11}(k) & 0.095 & 0 \\ -0.19 & 0.9 & 0 \\ 0 & 0 & 1 \end{bmatrix} \cdot \begin{bmatrix} x_1(k) \\ x_2(k) \\ a_{11}(k) \end{bmatrix} + \begin{bmatrix} 0.005 \\ 0.095 \\ 0 \end{bmatrix} \cdot u(k) + \begin{bmatrix} w_1(k) \\ w_2(k) \\ w_a(k) \end{bmatrix} \\
+    y(k) &= \begin{bmatrix} 1 & 0 & 0 \end{bmatrix} \cdot \begin{bmatrix} x_1(k) \\ x_2(k) \\ a_{11}(k) \end{bmatrix} + v(k)
+\end{align}
+
+W implementacji filtra Kalmana dla układu dwuwymiarowego zastosowano pełny algorytm dla rozszerzonego wektora stanu:
+
+Krok predykcji:
+\begin{align}
+    \hat{x}_{aug}^-(k) &= A_{aug}(k-1) \cdot \hat{x}_{aug}(k-1) + B_{aug} \cdot u(k-1) \\
+    P_{aug}^-(k) &= A_{aug}(k-1) \cdot P_{aug}(k-1) \cdot A_{aug}^T(k-1) + Q_{aug}
+\end{align}
+gdzie $A_{aug}(k-1)$ jest macierzą dynamiki zależną od bieżącego oszacowania parametru $a_{11}$.
+
+Obliczenie wzmocnienia Kalmana:
+\begin{align}
+    K_{aug}(k) &= P_{aug}^-(k) \cdot C_{aug}^T \cdot (C_{aug} \cdot P_{aug}^-(k) \cdot C_{aug}^T + R)^{-1}
+\end{align}
+
+Krok korekcji:
+\begin{align}
+    \hat{x}_{aug}(k) &= \hat{x}_{aug}^-(k) + K_{aug}(k) \cdot (y(k) - C_{aug} \cdot \hat{x}_{aug}^-(k)) \\
+    P_{aug}(k) &= (I - K_{aug}(k) \cdot C_{aug}) \cdot P_{aug}^-(k)
+\end{align}
+
+Parametr $q_a$ pojawia się w macierzy $Q_{aug}$ jako wariancja szumu procesu dla parametru $a_{11}$:
+\begin{align}
+    Q_{aug} = \begin{bmatrix} Q & 0 \\ 0 & q_a \end{bmatrix} = \begin{bmatrix} q_w & 0 & 0 \\ 0 & q_w & 0 \\ 0 & 0 & q_a \end{bmatrix}
+\end{align}
+

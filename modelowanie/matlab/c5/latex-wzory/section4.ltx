@@ -1,0 +1,65 @@
+
+
+\section{Wnioski}
+\label{sec:Wnioski}
+
+Przeprowadzona identyfikacja parametryczna układów dyskretnych i ciągłych pozwoliła na sformułowanie następujących wniosków:
+
+\subsection{Wpływ typu sygnału wymuszenia}
+
+Analiza wyników dla układu $G_1(z)$ z różnymi sygnałami wymuszającymi wykazała, że sygnał losowy zapewnia najlepsze uwarunkowanie numeryczne problemu identyfikacji oraz najdokładniejsze oszacowanie parametrów modelu. Wynika to z faktu, że sygnał losowy zawiera bogaty zestaw częstotliwości, co pozwala na lepszą identyfikację dynamiki układu. Sygnały deterministyczne (skok jednostkowy, pojedyncza sinusoida) pobudzają układ w ograniczonym zakresie częstotliwości, co prowadzi do gorszego uwarunkowania problemu.
+
+Wartości błędów MSE dla różnych wymuszeń układu $G_1(z)$ wyniosły:
+\begin{itemize}
+    \item Wymuszenie skokowe: MSE = 3.538e-05 (najniższy błąd)
+    \item Wymuszenie losowe: MSE = 0.00010862
+    \item Wymuszenie sinusoidalne: MSE = 0.00022338
+    \item Wymuszenie sumą sinusoid: MSE = 0.0010711 (najwyższy błąd)
+\end{itemize}
+
+Pomimo najniższego błędu MSE dla wymuszenia skokowego, sygnał losowy dał najdokładniejsze oszacowanie parametrów modelu, co potwierdza znaczenie właściwego doboru sygnału wejściowego w procesie identyfikacji.
+
+\subsection{Wpływ częstotliwości próbkowania}
+
+Badanie wpływu okresu próbkowania na jakość identyfikacji układów ciągłych wykazało, że:
+
+\begin{itemize}
+    \item Dla układów niższego rzędu ($G_3$, $G_4$) identyfikacja jest mniej wrażliwa na częstotliwość próbkowania
+    \item Dla układu wyższego rzędu ($G_5$) niższe wartości $T_s$ dają znacznie lepsze wyniki identyfikacji
+\end{itemize}
+
+Dla układu $G_5$ wartości MSE rosną znacząco wraz ze wzrostem $T_s$:
+\begin{itemize}
+    \item $T_s = 0.05$: MSE = 0.000440
+    \item $T_s = 0.1$: MSE = 0.001770
+    \item $T_s = 0.3$: MSE = 0.017466
+\end{itemize}
+
+Wraz ze wzrostem okresu próbkowania pogarsza się dokładność identyfikacji, zwiększają się rozbieżności w charakterystykach częstotliwościowych oraz maleje dokładność odtworzenia biegunów ciągłych z modelu dyskretnego. Dla celów identyfikacji zaleca się 5-10 razy wyższą częstotliwość próbkowania niż wynika to z twierdzenia Nyquista-Shannona.
+
+\subsection{Przydatność rozkładu SVD}
+
+Analiza wartości szczególnych macierzy informacyjnej dostarcza cennych informacji o jakości procesu identyfikacji. Stosunek największej do najmniejszej wartości szczególnej jest miarą uwarunkowania problemu. Lepsze uwarunkowanie (mniejszy stosunek) oznacza stabilniejsze rozwiązanie.
+
+Dla układu $G_1$ z sygnałem losowym wartości szczególne [7.39, 2.89, 0.73, 0.54] wskazują na dobre uwarunkowanie, podczas gdy dla sygnału skokowego [14.21, 0.22, 0.12, $\approx$0] świadczą o złym uwarunkowaniu.
+
+Dla układu $G_5$ przy $T_s=0.3$ wartości szczególne [52.79, 24.67, 11.04, 7.00, 6.73, 0.01] pokazują, że ostatnia wartość jest znacznie mniejsza, co wskazuje na potencjalne problemy z identyfikacją.
+
+Rozkład SVD pozwala wykryć potencjalne problemy numeryczne przed właściwą identyfikacją oraz może być używany do określenia odpowiedniego rzędu modelu - liczba istotnych wartości szczególnych wskazuje na rzeczywisty rząd systemu.
+
+\subsection{Porównanie identyfikacji z dyskretyzacją analityczną}
+
+Porównanie parametrów modeli dyskretnych uzyskanych przez identyfikację z parametrami otrzymanymi przez dyskretyzację analityczną wykazało, że:
+
+\begin{itemize}
+    \item Dla układów niższego rzędu ($G_3$, $G_4$) identyfikacja daje wyniki zbliżone do dyskretyzacji analitycznej
+    \item Dla układu $G_3$ przy $T_s=0.1$ parametry modelu zidentyfikowanego ($b_0 = 0.090635$, $a_0 = -0.81873$) są praktycznie identyczne z parametrami modelu zdyskretyzowanego metodą ZOH
+    \item Dla układu $G_5$ występują duże rozbieżności między parametrami zidentyfikowanymi a zdyskretyzowanymi metodą ZOH
+    \item Metoda ZOH daje lepsze przybliżenie identyfikowanych modeli niż metoda Tustina
+\end{itemize}
+
+Zidentyfikowane modele dla układu $G_5$ były niestabilne, podczas gdy modele zdyskretyzowane analitycznie pozostały stabilne, co wskazuje na trudności w identyfikacji układów wyższego rzędu.
+
+\subsection{Podsumowanie}
+
+Identyfikacja systemów dynamicznych jest procesem wrażliwym na wiele czynników. Kluczowe znaczenie mają: odpowiednio dobrany sygnał wymuszający, właściwa częstotliwość próbkowania oraz krytyczna analiza uwarunkowania problemu. Sygnały o bogatym spektrum częstotliwościowym dają najlepsze wyniki identyfikacji. Niższe okresy próbkowania zapewniają dokładniejsze modele, szczególnie dla układów wyższego rzędu. Analiza SVD stanowi skuteczne narzędzie do oceny jakości procesu identyfikacji i może być wykorzystana do wyboru odpowiedniego rzędu modelu.

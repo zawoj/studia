@@ -1,0 +1,33 @@
+
+
+\clearpage
+\section{Identyfikacja Układów Dynamicznych}
+\label{sec:Identyfikacja}
+
+Celem ćwiczenia jest przeprowadzenie identyfikacji off-line dla dwóch kategorii układów regulacji: obiektów dyskretnych opisanych transmitancjami dyskretnymi $G_1(z)$ i $G_2(z)$ oraz obiektów ciągłych reprezentowanych przez transmitancje ciągłe $G_3(s)$, $G_4(s)$ i $G_5(s)$, dla których niezbędne jest uzyskanie modeli dyskretnych. Głównym zadaniem jest wyznaczenie modeli matematycznych badanych układów na podstawie zebranych danych wejściowych i wyjściowych, a następnie przeprowadzenie walidacji otrzymanych modeli pod kątem ich dokładności.
+
+\subsection{Analizowane Układy}
+\label{subsec:Identyfikacja/uklady}
+
+W ramach identyfikacji analizowano następujące układy:
+
+\begin{longtable}{l|l|l}
+  \caption{Analizowane układy dynamiczne}
+  \label{table:uklady}
+  \\
+  \textbf{Typ} & \textbf{Oznaczenie} & \textbf{Transmitancja}\\
+  \hline
+  \multirow{2}{*}{Obiekty dyskretne} & $G_1(z)$ & $\frac{0.1z + 0.2}{z^2 + 0.3z + 0.4}$ - układ drugiego rzędu\\
+  & $G_2(z)$ & $\frac{0.1z^2 + 0.2z + 0.3}{z^3 + 0.3z^2 + 0.4z + 0.2}$ - układ trzeciego rzędu\\
+  \hline
+  \multirow{3}{*}{Obiekty ciągłe} & $G_3(s)$ & $\frac{1}{s + 2}$ - układ pierwszego rzędu (inercyjny)\\
+  & $G_4(s)$ & $\frac{1}{s^2 + 2s + 3}$ - układ drugiego rzędu (oscylacyjny)\\
+  & $G_5(s)$ & $\frac{s + 2}{s^3 + 2s^2 + s + 1}$ - układ trzeciego rzędu\\
+\end{longtable}
+
+\subsection{Metody Identyfikacji i Analiza}
+\label{subsec:Identyfikacja/metody}
+
+Proces identyfikacji parametrycznej zrealizowano przy zastosowaniu metod LS, RLS i IV, badając wpływ różnych sygnałów wejściowych (PRBS, szum biały, sygnały sinusoidalne i schodkowe) na jakość identyfikacji. Analizowano wpływ rozkładu wartości szczególnych (SVD) macierzy informacyjnej na wyniki identyfikacji, ze szczególnym uwzględnieniem liczby uwarunkowania macierzy, a także wpływ częstotliwości próbkowania na dokładność identyfikacji układów ciągłych, stabilność modelu dyskretnego oraz uwarunkowanie macierzy informacyjnej.
+
+Dla układów ciągłych porównano parametry modeli dyskretnych uzyskanych przez identyfikację bezpośrednią oraz dyskretyzację analityczną metodami Eulera, Tustina i ZOH, walidując otrzymane modele poprzez porównanie odpowiedzi czasowych, obliczenie błędów predykcji i analizę residuów.

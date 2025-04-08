@@ -1,513 +1,648 @@
-% Simulink implementation of online identification
-% This script creates and configures Simulink models for online identification
+% Online Identification Implementation Using Pure MATLAB
+% This script implements the RLS algorithm for both discrete and continuous systems
+% without using Simulink, focusing on direct equation implementation
+
+%% PART 1: DISCRETE SYSTEM IDENTIFICATION
+% G1(z) = (0.1z + 0.2)/(z^2 + 0.3z + 0.4)
 
 clear all;
 close all;
 clc;
 
-fprintf('Starting Simulink model creation for online system identification\n\n');
+% Simulation parameters
+T = 0.1;      % Sample time
+t_end = 20;   % Simulation end time
+t = 0:T:t_end;
+N = length(t);
 
-% Create a new Simulink model
-modelName = 'OnlineIdentification';
-if ~bdIsLoaded(modelName)
-    new_system(modelName);
-end
-open_system(modelName);
+% True parameters of the system G1
+a1_true = 0.3;
+a0_true = 0.4;
+b1_true = 0.1;
+b0_true = 0.2;
 
-fprintf('Creating Simulink model: %s\n', modelName);
-fprintf('This model implements online identification of discrete system G1\n');
-fprintf('G1(z) = (0.1z + 0.2)/(z^2 + 0.3z + 0.4)\n\n');
+% Generate input signal (white noise)
+rng(42);  % Set seed for reproducibility
+u = randn(N, 1);
 
-% Set simulation parameters
-set_param(modelName, 'Solver', 'ode45', 'StopTime', '20');
-
-% Add a white noise source
-add_block('simulink/Sources/Band-Limited White Noise', [modelName '/Noise']);
-set_param([modelName '/Noise'], 'Position', [50, 100, 80, 130]);
-set_param([modelName '/Noise'], 'Ts', '0.1');
-
-% Add a transfer function block for G1(z) = (0.1z + 0.2)/(z^2 + 0.3z + 0.4)
-add_block('simulink/Discrete/Discrete Transfer Fcn', [modelName '/G1']);
-set_param([modelName '/G1'], 'Position', [150, 100, 250, 130]);
-set_param([modelName '/G1'], 'Numerator', '[0.1 0.2]');
-set_param([modelName '/G1'], 'Denominator', '[1 0.3 0.4]');
-set_param([modelName '/G1'], 'SampleTime', '0.1');
-
-% Add output noise
-add_block('simulink/Sources/Band-Limited White Noise', [modelName '/OutputNoise']);
-set_param([modelName '/OutputNoise'], 'Position', [150, 180, 180, 210]);
-set_param([modelName '/OutputNoise'], 'Ts', '0.1');
-set_param([modelName '/OutputNoise'], 'Cov', '0.01');
-
-% Add a summing block for adding output noise
-add_block('simulink/Math Operations/Sum', [modelName '/Sum']);
-set_param([modelName '/Sum'], 'Position', [300, 105, 320, 125]);
-set_param([modelName '/Sum'], 'Inputs', '++');
-
-% Create custom RLS implementation using MATLAB Function block instead of slcontrol
-fprintf('Creating custom RLS implementation using MATLAB Function block\n');
-
-% Create a subsystem for RLS implementation
-add_block('simulink/Ports & Subsystems/Subsystem', [modelName '/RLS']);
-set_param([modelName '/RLS'], 'Position', [400, 100, 500, 130]);
-
-% Check if input/output ports already exist before adding
-if isempty(find_system([modelName '/RLS'], 'BlockType', 'Inport', 'Name', 'In1'))
-    add_block('simulink/Ports & Subsystems/Inport', [modelName '/RLS/In1']);
-    set_param([modelName '/RLS/In1'], 'Position', [50, 100, 70, 120]);
+% Generate output signal using difference equation
+y = zeros(N, 1);
+for k = 3:N
+    y(k) = -a1_true*y(k-1) - a0_true*y(k-2) + b1_true*u(k-1) + b0_true*u(k-2);
 end
 
-if isempty(find_system([modelName '/RLS'], 'BlockType', 'Inport', 'Name', 'In2'))
-    add_block('simulink/Ports & Subsystems/Inport', [modelName '/RLS/In2']);
-    set_param([modelName '/RLS/In2'], 'Position', [50, 160, 70, 180]);
+% Add measurement noise
+noise_level = 0.01;
+y_noisy = y + noise_level*randn(N, 1);
+
+% Initialize RLS algorithm parameters
+theta = zeros(N, 4);  % Parameter estimates [a1, a0, b1, b0]
+theta(1:2, :) = repmat([0, 0, 0, 0], 2, 1);  % Initial guess
+
+% Initialize covariance matrix P
+P = zeros(4, 4, N);
+P(:,:,1:2) = repmat(100*eye(4), 1, 1, 2);  % High initial uncertainty
+
+% Forgetting factor
+lambda = 0.98;
+
+% Run RLS algorithm
+for k = 3:N
+    % Form regressor vector
+    phi = [-y_noisy(k-1); -y_noisy(k-2); u(k-1); u(k-2)];
+    
+    % Prediction error
+    epsilon = y_noisy(k) - phi' * theta(k-1,:)';
+    
+    % Update P matrix according to equation (1) from the PDF
+    P_prev = P(:,:,k-1);
+    P(:,:,k) = (P_prev - (P_prev * phi * phi' * P_prev) / (lambda + phi' * P_prev * phi)) / lambda;
+    
+    % Calculate Kalman gain according to equation (3)
+    K = P(:,:,k) * phi;
+    
+    % Update parameter estimates according to equation (4)
+    theta(k,:) = theta(k-1,:) + (K * epsilon)';
 end
 
-if isempty(find_system([modelName '/RLS'], 'BlockType', 'Outport', 'Name', 'Out1'))
-    add_block('simulink/Ports & Subsystems/Outport', [modelName '/RLS/Out1']);
-    set_param([modelName '/RLS/Out1'], 'Position', [450, 130, 470, 150]);
+% Display parameter estimation results at different time points
+disp('=== PART 1: DISCRETE SYSTEM IDENTIFICATION ===');
+disp('True parameters: ');
+disp(['a1 = ', num2str(a1_true), ', a0 = ', num2str(a0_true), ...
+      ', b1 = ', num2str(b1_true), ', b0 = ', num2str(b0_true)]);
+
+% Display results at 25%, 50%, 75% and 100% of simulation time
+checkpoints = [round(N*0.25), round(N*0.5), round(N*0.75), N];
+for i = 1:length(checkpoints)
+    k = checkpoints(i);
+    disp(['Parameters at t = ', num2str(t(k)), 's (', num2str(k), '/', num2str(N), ' samples):']);
+    disp(['a1 = ', num2str(theta(k,1)), ', a0 = ', num2str(theta(k,2)), ...
+          ', b1 = ', num2str(theta(k,3)), ', b0 = ', num2str(theta(k,4))]);
+    disp(['Error (%): a1 = ', num2str(100*(theta(k,1)-a1_true)/a1_true), ...
+          ', a0 = ', num2str(100*(theta(k,2)-a0_true)/a0_true), ...
+          ', b1 = ', num2str(100*(theta(k,3)-b1_true)/b1_true), ...
+          ', b0 = ', num2str(100*(theta(k,4)-b0_true)/b0_true)]);
 end
 
-% Add MATLAB Function block for RLS algorithm
-add_block('simulink/User-Defined Functions/MATLAB Function', [modelName '/RLS/RLSFunction']);
-set_param([modelName '/RLS/RLSFunction'], 'Position', [250, 120, 350, 160]);
+% Combined plot (as before)
+fig1 = figure('Name', 'Discrete System Identification - Combined', 'NumberTitle', 'off');
+subplot(2,1,1);
+plot(t, theta(:,1), 'r-', t, theta(:,2), 'g-', t, theta(:,3), 'b-', t, theta(:,4), 'm-', 'LineWidth', 1.5);
+hold on;
+plot(t, a1_true*ones(size(t)), 'r--', t, a0_true*ones(size(t)), 'g--', ...
+     t, b1_true*ones(size(t)), 'b--', t, b0_true*ones(size(t)), 'm--', 'LineWidth', 1);
+hold off;
+title('Parameter Estimation for G1(z) = (0.1z + 0.2)/(z^2 + 0.3z + 0.4)');
+xlabel('Time [s]');
+ylabel('Parameter values');
+legend('Estimated a_1', 'Estimated a_0', 'Estimated b_1', 'Estimated b_0', ...
+       'True a_1', 'True a_0', 'True b_1', 'True b_0');
+grid on;
 
-% Set the MATLAB Function block content with RLS algorithm
-rls_code = [
-    'function theta = RLSFunction(u, y)\n'...
-    '    persistent P theta_prev phi_prev;\n'...
-    '    if isempty(P)\n'...
-    '        % Initialize parameters\n'...
-    '        P = 100*eye(4);\n'...
-    '        theta_prev = zeros(4,1);\n'...
-    '        phi_prev = zeros(4,1);\n'...
-    '    end\n'...
-    '    \n'...
-    '    % Current regressor vector\n'...
-    '    phi = [-y; -phi_prev(1); u; phi_prev(3)];\n'...
-    '    \n'...
-    '    % Forgetting factor\n'...
-    '    lambda = 0.98;\n'...
-    '    \n'...
-    '    % RLS algorithm\n'...
-    '    K = P*phi/(lambda + phi''*P*phi);\n'...
-    '    epsilon = y - phi''*theta_prev;\n'...
-    '    theta = theta_prev + K*epsilon;\n'...
-    '    P = (P - K*phi''*P)/lambda;\n'...
-    '    \n'...
-    '    % Store for next iteration\n'...
-    '    theta_prev = theta;\n'...
-    '    phi_prev = phi;\n'...
-    'end\n'
-];
+% Plot diagonal elements of P matrix
+subplot(2,1,2);
+plot(t, squeeze(P(1,1,:)), 'r-', t, squeeze(P(2,2,:)), 'g-', ...
+     t, squeeze(P(3,3,:)), 'b-', t, squeeze(P(4,4,:)), 'm-', 'LineWidth', 1.5);
+title('Covariance Matrix Diagonal Elements');
+xlabel('Time [s]');
+ylabel('P matrix diagonal values');
+legend('P(1,1)', 'P(2,2)', 'P(3,3)', 'P(4,4)');
+grid on;
 
-set_param([modelName '/RLS/RLSFunction'], 'MATLABFcn', rls_code);
+% Save the combined figure
+saveas(fig1, 'part1_combined.png');
 
-% Connect blocks in RLS subsystem
-add_line([modelName '/RLS'], 'In1/1', 'RLSFunction/1', 'autorouting', 'on');
-add_line([modelName '/RLS'], 'In2/1', 'RLSFunction/2', 'autorouting', 'on');
-add_line([modelName '/RLS'], 'RLSFunction/1', 'Out1/1', 'autorouting', 'on');
+% Individual parameter plots with auto-scaling y-axis
+param_names = {'a_1', 'a_0', 'b_1', 'b_0'};
+true_values = [a1_true, a0_true, b1_true, b0_true];
 
-% Add blocks to create regressor vector
-add_block('simulink/Signal Routing/Demux', [modelName '/Demux']);
-set_param([modelName '/Demux'], 'Position', [550, 100, 570, 130]);
-set_param([modelName '/Demux'], 'Outputs', '4');
-
-% Add scopes for visualization
-add_block('simulink/Sinks/Scope', [modelName '/ParametersScope']);
-set_param([modelName '/ParametersScope'], 'Position', [650, 100, 680, 130]);
-
-% Add a clock for time
-add_block('simulink/Sources/Clock', [modelName '/Clock']);
-set_param([modelName '/Clock'], 'Position', [400, 200, 420, 220]);
-
-% Add To Workspace blocks to save simulation results
-add_block('simulink/Sinks/To Workspace', [modelName '/ToWorkspaceTheta']);
-set_param([modelName '/ToWorkspaceTheta'], 'Position', [550, 200, 610, 230]);
-set_param([modelName '/ToWorkspaceTheta'], 'VariableName', 'theta');
-set_param([modelName '/ToWorkspaceTheta'], 'SampleTime', '0.1');
-
-add_block('simulink/Sinks/To Workspace', [modelName '/ToWorkspaceTime']);
-set_param([modelName '/ToWorkspaceTime'], 'Position', [450, 200, 510, 230]);
-set_param([modelName '/ToWorkspaceTime'], 'VariableName', 't');
-set_param([modelName '/ToWorkspaceTime'], 'SampleTime', '0.1');
-
-% Connect the blocks
-add_line(modelName, 'Noise/1', 'G1/1', 'autorouting', 'on');
-add_line(modelName, 'G1/1', 'Sum/1', 'autorouting', 'on');
-add_line(modelName, 'OutputNoise/1', 'Sum/2', 'autorouting', 'on');
-add_line(modelName, 'Sum/1', 'RLS/2', 'autorouting', 'on');
-add_line(modelName, 'Noise/1', 'RLS/1', 'autorouting', 'on');
-add_line(modelName, 'RLS/1', 'Demux/1', 'autorouting', 'on');
-add_line(modelName, 'Demux/1', 'ParametersScope/1', 'autorouting', 'on');
-add_line(modelName, 'RLS/1', 'ToWorkspaceTheta/1', 'autorouting', 'on');
-add_line(modelName, 'Clock/1', 'ToWorkspaceTime/1', 'autorouting', 'on');
-
-% Save model
-save_system(modelName);
-
-% Save model diagram as PNG
-fprintf('Saving model diagram as PNG...\n');
-print([modelName, '/'], '-dpng', 'G1_simulink_model.png');
-
-% Display model configuration details
-fprintf('Discrete System G1 Model Configuration:\n');
-fprintf('Sample Time: 0.1 seconds\n');
-fprintf('Simulation Time: 20 seconds\n');
-fprintf('Noise Variance: 0.01\n');
-fprintf('Forgetting Factor: 0.98\n');
-fprintf('Initial Parameter Estimate: [0 0 0 0]\n');
-fprintf('Initial Covariance Matrix: 100*eye(4)\n\n');
-
-% Instructions for creating time-varying parameter model
-fprintf('To create a model with time-varying parameters:\n');
-fprintf('1. Create a new subsystem to replace the Transfer Function block\n');
-fprintf('2. Inside the subsystem, use a Multiport Switch to select between different Transfer Function blocks\n');
-fprintf('3. Use a Step or Clock block to control the switching time\n');
-fprintf('4. Set the forgetting factor to a value between 0.95 and 0.98\n');
-fprintf('5. Experiment with different noise levels and input signals\n\n');
-
-% Create a second model for continuous system identification
-fprintf('Creating second Simulink model for continuous system identification\n\n');
-modelName2 = 'OnlineIdentificationContinuous';
-if ~bdIsLoaded(modelName2)
-    new_system(modelName2);
+for i = 1:4
+    fig = figure('Name', ['Discrete System - ' param_names{i}], 'NumberTitle', 'off');
+    plot(t, theta(:,i), 'b-', 'LineWidth', 1.5);
+    hold on;
+    plot(t, true_values(i)*ones(size(t)), 'r--', 'LineWidth', 1.5);
+    hold off;
+    title(['Parameter Estimation for ' param_names{i}]);
+    xlabel('Time [s]');
+    ylabel(['Parameter ' param_names{i} ' value']);
+    legend(['Estimated ' param_names{i}], ['True ' param_names{i}]);
+    grid on;
+    % Auto-scale y-axis with some margin
+    ylim_current = ylim;
+    ylim_range = ylim_current(2) - ylim_current(1);
+    ylim([ylim_current(1) - 0.1*ylim_range, ylim_current(2) + 0.1*ylim_range]);
+    
+    % Save individual parameter figure
+    saveas(fig, ['part1_' param_names{i} '.png']);
 end
-open_system(modelName2);
 
-fprintf('Creating Simulink model: %s\n', modelName2);
-fprintf('This model implements online identification of continuous system G2\n');
-fprintf('G2(s) = (s + 1)/(s^2 + 2s + 3)\n\n');
-
-% Set simulation parameters
-set_param(modelName2, 'Solver', 'ode45', 'StopTime', '20');
-
-% Add a white noise source
-add_block('simulink/Sources/Band-Limited White Noise', [modelName2 '/Noise']);
-set_param([modelName2 '/Noise'], 'Position', [50, 100, 80, 130]);
-set_param([modelName2 '/Noise'], 'Ts', '0.01');
-
-% Add a transfer function block for G2(s) = (s + 1)/(s^2 + 2s + 3)
-add_block('simulink/Continuous/Transfer Fcn', [modelName2 '/G2']);
-set_param([modelName2 '/G2'], 'Position', [150, 100, 250, 130]);
-set_param([modelName2 '/G2'], 'Numerator', '[1 1]');
-set_param([modelName2 '/G2'], 'Denominator', '[1 2 3]');
-
-% Add a zero-order hold for discretization
-add_block('simulink/Discrete/Zero-Order Hold', [modelName2 '/ZOH']);
-set_param([modelName2 '/ZOH'], 'Position', [300, 100, 330, 130]);
-set_param([modelName2 '/ZOH'], 'SampleTime', '0.01');
-
-% Add output noise
-add_block('simulink/Sources/Band-Limited White Noise', [modelName2 '/OutputNoise']);
-set_param([modelName2 '/OutputNoise'], 'Position', [300, 180, 330, 210]);
-set_param([modelName2 '/OutputNoise'], 'Ts', '0.01');
-set_param([modelName2 '/OutputNoise'], 'Cov', '0.01');
-
-% Add a summing block for adding output noise
-add_block('simulink/Math Operations/Sum', [modelName2 '/Sum']);
-set_param([modelName2 '/Sum'], 'Position', [400, 105, 420, 125]);
-set_param([modelName2 '/Sum'], 'Inputs', '++');
-
-% Create custom RLS implementation for G2
-fprintf('Creating custom RLS implementation for continuous system\n');
-
-% Create a subsystem for RLS implementation
-add_block('simulink/Ports & Subsystems/Subsystem', [modelName2 '/RLS']);
-set_param([modelName2 '/RLS'], 'Position', [500, 100, 600, 130]);
-
-% Add input/output ports to RLS subsystem
-add_block('simulink/Ports & Subsystems/In1', [modelName2 '/RLS/In1']);
-set_param([modelName2 '/RLS/In1'], 'Position', [50, 100, 70, 120]);
-add_block('simulink/Ports & Subsystems/In2', [modelName2 '/RLS/In2']);
-set_param([modelName2 '/RLS/In2'], 'Position', [50, 160, 70, 180]);
-
-add_block('simulink/Ports & Subsystems/Out1', [modelName2 '/RLS/Out1']);
-set_param([modelName2 '/RLS/Out1'], 'Position', [450, 130, 470, 150]);
-
-% Add MATLAB Function block for RLS algorithm
-add_block('simulink/User-Defined Functions/MATLAB Function', [modelName2 '/RLS/RLSFunction']);
-set_param([modelName2 '/RLS/RLSFunction'], 'Position', [250, 120, 350, 160]);
-
-% Set the MATLAB Function block content with RLS algorithm for continuous system
-rls_code = [
-    'function theta = RLSFunction(u, y)\n'...
-    '    persistent P theta_prev phi_prev;\n'...
-    '    if isempty(P)\n'...
-    '        % Initialize parameters\n'...
-    '        P = 100*eye(4);\n'...
-    '        theta_prev = zeros(4,1);\n'...
-    '        phi_prev = zeros(4,1);\n'...
-    '    end\n'...
-    '    \n'...
-    '    % Current regressor vector\n'...
-    '    phi = [y; phi_prev(1); u; phi_prev(3)];\n'...
-    '    \n'...
-    '    % Forgetting factor\n'...
-    '    lambda = 0.98;\n'...
-    '    \n'...
-    '    % RLS algorithm\n'...
-    '    K = P*phi/(lambda + phi''*P*phi);\n'...
-    '    epsilon = y - phi''*theta_prev;\n'...
-    '    theta = theta_prev + K*epsilon;\n'...
-    '    P = (P - K*phi''*P)/lambda;\n'...
-    '    \n'...
-    '    % Store for next iteration\n'...
-    '    theta_prev = theta;\n'...
-    '    phi_prev = phi;\n'...
-    'end\n'
-];
-
-set_param([modelName2 '/RLS/RLSFunction'], 'MATLABFcn', rls_code);
-
-% Connect blocks in RLS subsystem
-add_line([modelName2 '/RLS'], 'In1/1', 'RLSFunction/1', 'autorouting', 'on');
-add_line([modelName2 '/RLS'], 'In2/1', 'RLSFunction/2', 'autorouting', 'on');
-add_line([modelName2 '/RLS'], 'RLSFunction/1', 'Out1/1', 'autorouting', 'on');
-
-% Add blocks to create regressor vector
-add_block('simulink/Signal Routing/Demux', [modelName2 '/Demux']);
-set_param([modelName2 '/Demux'], 'Position', [650, 100, 670, 130]);
-set_param([modelName2 '/Demux'], 'Outputs', '4');
-
-% Add scopes for visualization
-add_block('simulink/Sinks/Scope', [modelName2 '/ParametersScope']);
-set_param([modelName2 '/ParametersScope'], 'Position', [750, 100, 780, 130]);
-
-% Add a clock for time
-add_block('simulink/Sources/Clock', [modelName2 '/Clock']);
-set_param([modelName2 '/Clock'], 'Position', [500, 200, 520, 220]);
-
-% Add To Workspace blocks to save simulation results
-add_block('simulink/Sinks/To Workspace', [modelName2 '/ToWorkspaceTheta']);
-set_param([modelName2 '/ToWorkspaceTheta'], 'Position', [650, 200, 710, 230]);
-set_param([modelName2 '/ToWorkspaceTheta'], 'VariableName', 'theta');
-set_param([modelName2 '/ToWorkspaceTheta'], 'SampleTime', '0.01');
-
-add_block('simulink/Sinks/To Workspace', [modelName2 '/ToWorkspaceTime']);
-set_param([modelName2 '/ToWorkspaceTime'], 'Position', [550, 200, 610, 230]);
-set_param([modelName2 '/ToWorkspaceTime'], 'VariableName', 't');
-set_param([modelName2 '/ToWorkspaceTime'], 'SampleTime', '0.01');
-
-% Connect the blocks
-add_line(modelName2, 'Noise/1', 'G2/1', 'autorouting', 'on');
-add_line(modelName2, 'G2/1', 'ZOH/1', 'autorouting', 'on');
-add_line(modelName2, 'ZOH/1', 'Sum/1', 'autorouting', 'on');
-add_line(modelName2, 'OutputNoise/1', 'Sum/2', 'autorouting', 'on');
-add_line(modelName2, 'Sum/1', 'RLS/2', 'autorouting', 'on');
-add_line(modelName2, 'Noise/1', 'RLS/1', 'autorouting', 'on');
-add_line(modelName2, 'RLS/1', 'Demux/1', 'autorouting', 'on');
-add_line(modelName2, 'Demux/1', 'ParametersScope/1', 'autorouting', 'on');
-add_line(modelName2, 'RLS/1', 'ToWorkspaceTheta/1', 'autorouting', 'on');
-add_line(modelName2, 'Clock/1', 'ToWorkspaceTime/1', 'autorouting', 'on');
-
-% Save model
-save_system(modelName2);
-
-% Save model diagram as PNG
-fprintf('Saving model diagram as PNG...\n');
-print([modelName2, '/'], '-dpng', 'G2_simulink_model.png');
-
-% Display model configuration details
-fprintf('Continuous System G2 Model Configuration:\n');
-fprintf('Sample Time: 0.01 seconds\n');
-fprintf('Simulation Time: 20 seconds\n');
-fprintf('Noise Variance: 0.01\n');
-fprintf('Forgetting Factor: 0.98\n');
-fprintf('Initial Parameter Estimate: [0 0 0 0]\n');
-fprintf('Initial Covariance Matrix: 100*eye(4)\n\n');
-
-% Create time-varying model for demonstration
-fprintf('Creating a time-varying parameter model example...\n');
-modelName3 = 'OnlineIdentificationTimeVarying';
-if ~bdIsLoaded(modelName3)
-    new_system(modelName3);
+% Individual covariance matrix plots
+for i = 1:4
+    fig = figure('Name', ['Discrete System - P(' num2str(i) ',' num2str(i) ')'], 'NumberTitle', 'off');
+    plot(t, squeeze(P(i,i,:)), 'b-', 'LineWidth', 1.5);
+    title(['Covariance Matrix Element P(' num2str(i) ',' num2str(i) ')']);
+    xlabel('Time [s]');
+    ylabel(['P(' num2str(i) ',' num2str(i) ') value']);
+    grid on;
+    
+    % Save covariance figure
+    saveas(fig, ['part1_P' num2str(i) num2str(i) '.png']);
 end
-open_system(modelName3);
 
-fprintf('Creating Simulink model: %s\n', modelName3);
-fprintf('This model demonstrates time-varying parameter identification\n\n');
+%% PART 2: DISCRETE SYSTEM WITH TIME-VARYING PARAMETERS
+% G1(z) with changing b0 parameter
 
-% Set simulation parameters
-set_param(modelName3, 'Solver', 'ode45', 'StopTime', '40');
+clear all;
+close all;
 
-% Add time-varying system using manual switch
-add_block('simulink/Sources/Band-Limited White Noise', [modelName3 '/Noise']);
-set_param([modelName3 '/Noise'], 'Position', [50, 100, 80, 130]);
-set_param([modelName3 '/Noise'], 'Ts', '0.1');
+% Simulation parameters
+T = 0.1;
+t_end = 40;
+t = 0:T:t_end;
+N = length(t);
 
-% Create subsystem for time-varying plant
-add_block('simulink/Ports & Subsystems/Subsystem', [modelName3 '/TimeVaryingPlant']);
-set_param([modelName3 '/TimeVaryingPlant'], 'Position', [150, 100, 250, 130]);
+% Define time-varying parameters
+a1 = 0.3 * ones(N, 1);
+a0 = 0.4 * ones(N, 1);
+b1 = 0.1 * ones(N, 1);
+b0 = 0.2 * ones(N, 1);
 
-% Create first system
-add_block('simulink/Discrete/Discrete Transfer Fcn', [modelName3 '/TimeVaryingPlant/G1']);
-set_param([modelName3 '/TimeVaryingPlant/G1'], 'Position', [200, 70, 300, 100]);
-set_param([modelName3 '/TimeVaryingPlant/G1'], 'Numerator', '[0.1 0.2]');
-set_param([modelName3 '/TimeVaryingPlant/G1'], 'Denominator', '[1 0.3 0.4]');
-set_param([modelName3 '/TimeVaryingPlant/G1'], 'SampleTime', '0.1');
+% Create parameter change at t = 20s
+change_time = 20;
+change_index = find(t >= change_time, 1);
+b0(change_index:end) = 0.5;  % b0 changes from 0.2 to 0.5
 
-% Create second system (with changed parameters)
-add_block('simulink/Discrete/Discrete Transfer Fcn', [modelName3 '/TimeVaryingPlant/G2']);
-set_param([modelName3 '/TimeVaryingPlant/G2'], 'Position', [200, 170, 300, 200]);
-set_param([modelName3 '/TimeVaryingPlant/G2'], 'Numerator', '[0.1 0.5]');  % b0 changed from 0.2 to 0.5
-set_param([modelName3 '/TimeVaryingPlant/G2'], 'Denominator', '[1 0.3 0.4]');
-set_param([modelName3 '/TimeVaryingPlant/G2'], 'SampleTime', '0.1');
+% Generate input signal
+rng(42);
+u = randn(N, 1);
 
-% Add a switch
-add_block('simulink/Signal Routing/Manual Switch', [modelName3 '/TimeVaryingPlant/Switch']);
-set_param([modelName3 '/TimeVaryingPlant/Switch'], 'Position', [400, 120, 430, 150]);
+% Generate output signal with time-varying parameters
+y = zeros(N, 1);
+for k = 3:N
+    y(k) = -a1(k)*y(k-1) - a0(k)*y(k-2) + b1(k)*u(k-1) + b0(k)*u(k-2);
+end
 
-% Add step block to control switching
-add_block('simulink/Sources/Step', [modelName3 '/TimeVaryingPlant/Step']);
-set_param([modelName3 '/TimeVaryingPlant/Step'], 'Position', [100, 230, 130, 260]);
-set_param([modelName3 '/TimeVaryingPlant/Step'], 'Time', '20');  % Switch at t=20
-set_param([modelName3 '/TimeVaryingPlant/Step'], 'After', '1');
-set_param([modelName3 '/TimeVaryingPlant/Step'], 'Before', '0');
+% Add measurement noise
+noise_level = 0.01;
+y_noisy = y + noise_level*randn(N, 1);
 
-% Add multiport switch
-add_block('simulink/Signal Routing/Multiport Switch', [modelName3 '/TimeVaryingPlant/MultiSwitch']);
-set_param([modelName3 '/TimeVaryingPlant/MultiSwitch'], 'Position', [350, 120, 380, 150]);
-set_param([modelName3 '/TimeVaryingPlant/MultiSwitch'], 'Inputs', '3');
+% Initialize RLS algorithm parameters
+theta = zeros(N, 4);
+theta(1:2, :) = repmat([0, 0, 0, 0], 2, 1);
 
-% Add input/output ports for subsystem
-add_block('simulink/Ports & Subsystems/In1', [modelName3 '/TimeVaryingPlant/In1']);
-set_param([modelName3 '/TimeVaryingPlant/In1'], 'Position', [50, 120, 70, 140]);
+% Initialize covariance matrix P
+P = zeros(4, 4, N);
+P(:,:,1:2) = repmat(100*eye(4), 1, 1, 2);
 
-add_block('simulink/Ports & Subsystems/Out1', [modelName3 '/TimeVaryingPlant/Out1']);
-set_param([modelName3 '/TimeVaryingPlant/Out1'], 'Position', [480, 120, 500, 140]);
+% Forgetting factor (smaller value for faster adaptation to changes)
+lambda = 0.95;
 
-% Connect the blocks in subsystem
-add_line([modelName3 '/TimeVaryingPlant'], 'In1/1', 'G1/1', 'autorouting', 'on');
-add_line([modelName3 '/TimeVaryingPlant'], 'In1/1', 'G2/1', 'autorouting', 'on');
-add_line([modelName3 '/TimeVaryingPlant'], 'G1/1', 'MultiSwitch/1', 'autorouting', 'on');
-add_line([modelName3 '/TimeVaryingPlant'], 'G2/1', 'MultiSwitch/2', 'autorouting', 'on');
-add_line([modelName3 '/TimeVaryingPlant'], 'Step/1', 'MultiSwitch/3', 'autorouting', 'on');
-add_line([modelName3 '/TimeVaryingPlant'], 'MultiSwitch/1', 'Out1/1', 'autorouting', 'on');
+% Run RLS algorithm
+for k = 3:N
+    phi = [-y_noisy(k-1); -y_noisy(k-2); u(k-1); u(k-2)];
+    epsilon = y_noisy(k) - phi' * theta(k-1,:)';
+    
+    P_prev = P(:,:,k-1);
+    P(:,:,k) = (P_prev - (P_prev * phi * phi' * P_prev) / (lambda + phi' * P_prev * phi)) / lambda;
+    
+    K = P(:,:,k) * phi;
+    theta(k,:) = theta(k-1,:) + (K * epsilon)';
+end
 
-% Rest of the model (same as before)
-add_block('simulink/Sources/Band-Limited White Noise', [modelName3 '/OutputNoise']);
-set_param([modelName3 '/OutputNoise'], 'Position', [150, 180, 180, 210]);
-set_param([modelName3 '/OutputNoise'], 'Ts', '0.1');
-set_param([modelName3 '/OutputNoise'], 'Cov', '0.01');
+% Display parameter estimation results for time-varying system
+disp('=== PART 2: DISCRETE SYSTEM WITH TIME-VARYING PARAMETERS ===');
 
-add_block('simulink/Math Operations/Sum', [modelName3 '/Sum']);
-set_param([modelName3 '/Sum'], 'Position', [300, 105, 320, 125]);
-set_param([modelName3 '/Sum'], 'Inputs', '++');
+% Display results before, at, and after the parameter change
+before_change = find(t < change_time, 1, 'last');
+after_change = change_index + round(N/10);  % A bit after change
+final_point = N;
 
-% Create custom RLS implementation for time-varying system
-fprintf('Creating custom RLS implementation for time-varying system\n');
+checkpoints = [before_change, change_index, after_change, final_point];
+checkpoint_labels = {'Before change', 'At change', 'Shortly after change', 'Final'};
 
-% Create a subsystem for RLS implementation
-add_block('simulink/Ports & Subsystems/Subsystem', [modelName3 '/RLS']);
-set_param([modelName3 '/RLS'], 'Position', [400, 100, 500, 130]);
+for i = 1:length(checkpoints)
+    k = checkpoints(i);
+    disp([checkpoint_labels{i}, ' parameters at t = ', num2str(t(k)), 's:']);
+    disp(['True:      a1 = ', num2str(a1(k)), ', a0 = ', num2str(a0(k)), ...
+          ', b1 = ', num2str(b1(k)), ', b0 = ', num2str(b0(k))]);
+    disp(['Estimated: a1 = ', num2str(theta(k,1)), ', a0 = ', num2str(theta(k,2)), ...
+          ', b1 = ', num2str(theta(k,3)), ', b0 = ', num2str(theta(k,4))]);
+    disp(['Error (%): a1 = ', num2str(100*(theta(k,1)-a1(k))/a1(k)), ...
+          ', a0 = ', num2str(100*(theta(k,2)-a0(k))/a0(k)), ...
+          ', b1 = ', num2str(100*(theta(k,3)-b1(k))/b1(k)), ...
+          ', b0 = ', num2str(100*(theta(k,4)-b0(k))/b0(k))]);
+end
 
-% Add input/output ports to RLS subsystem
-add_block('simulink/Ports & Subsystems/In1', [modelName3 '/RLS/In1']);
-set_param([modelName3 '/RLS/In1'], 'Position', [50, 100, 70, 120]);
-add_block('simulink/Ports & Subsystems/In2', [modelName3 '/RLS/In2']);
-set_param([modelName3 '/RLS/In2'], 'Position', [50, 160, 70, 180]);
+% Combined plot (as before)
+fig2 = figure('Name', 'Time-Varying System Identification - Combined', 'NumberTitle', 'off');
+subplot(2,1,1);
+plot(t, theta(:,1), 'r-', t, theta(:,2), 'g-', t, theta(:,3), 'b-', t, theta(:,4), 'm-', 'LineWidth', 1.5);
+hold on;
+plot(t, a1, 'r--', t, a0, 'g--', t, b1, 'b--', t, b0, 'm--', 'LineWidth', 1);
+hold off;
+title(['Parameter Estimation for Time-Varying System (λ = ', num2str(lambda), ')']);
+xlabel('Time [s]');
+ylabel('Parameter values');
+legend('Estimated a_1', 'Estimated a_0', 'Estimated b_1', 'Estimated b_0', ...
+       'True a_1', 'True a_0', 'True b_1', 'True b_0');
+grid on;
 
-add_block('simulink/Ports & Subsystems/Out1', [modelName3 '/RLS/Out1']);
-set_param([modelName3 '/RLS/Out1'], 'Position', [450, 130, 470, 150]);
+% Plot diagonal elements of P matrix
+subplot(2,1,2);
+plot(t, squeeze(P(1,1,:)), 'r-', t, squeeze(P(2,2,:)), 'g-', ...
+     t, squeeze(P(3,3,:)), 'b-', t, squeeze(P(4,4,:)), 'm-', 'LineWidth', 1.5);
+title('Covariance Matrix Diagonal Elements');
+xlabel('Time [s]');
+ylabel('P matrix diagonal values');
+legend('P(1,1)', 'P(2,2)', 'P(3,3)', 'P(4,4)');
+grid on;
 
-% Add MATLAB Function block for RLS algorithm
-add_block('simulink/User-Defined Functions/MATLAB Function', [modelName3 '/RLS/RLSFunction']);
-set_param([modelName3 '/RLS/RLSFunction'], 'Position', [250, 120, 350, 160]);
+% Save the combined figure
+saveas(fig2, 'part2_combined.png');
 
-% Set the MATLAB Function block content with RLS algorithm - using lower forgetting factor
-rls_code = [
-    'function theta = RLSFunction(u, y)\n'...
-    '    persistent P theta_prev phi_prev;\n'...
-    '    if isempty(P)\n'...
-    '        % Initialize parameters\n'...
-    '        P = 100*eye(4);\n'...
-    '        theta_prev = zeros(4,1);\n'...
-    '        phi_prev = zeros(4,1);\n'...
-    '    end\n'...
-    '    \n'...
-    '    % Current regressor vector\n'...
-    '    phi = [-y; -phi_prev(1); u; phi_prev(3)];\n'...
-    '    \n'...
-    '    % Lower forgetting factor for better tracking of time-varying parameters\n'...
-    '    lambda = 0.95;\n'...
-    '    \n'...
-    '    % RLS algorithm\n'...
-    '    K = P*phi/(lambda + phi''*P*phi);\n'...
-    '    epsilon = y - phi''*theta_prev;\n'...
-    '    theta = theta_prev + K*epsilon;\n'...
-    '    P = (P - K*phi''*P)/lambda;\n'...
-    '    \n'...
-    '    % Store for next iteration\n'...
-    '    theta_prev = theta;\n'...
-    '    phi_prev = phi;\n'...
-    'end\n'
-];
+% Individual parameter plots with auto-scaling y-axis
+param_names = {'a_1', 'a_0', 'b_1', 'b_0'};
+true_values = {a1, a0, b1, b0};  % For time-varying parameters, use arrays
 
-set_param([modelName3 '/RLS/RLSFunction'], 'MATLABFcn', rls_code);
+for i = 1:4
+    fig = figure('Name', ['Time-Varying System - ' param_names{i}], 'NumberTitle', 'off');
+    plot(t, theta(:,i), 'b-', 'LineWidth', 1.5);
+    hold on;
+    plot(t, true_values{i}, 'r--', 'LineWidth', 1.5);
+    
+    % Add a vertical line at the change point
+    xline(change_time, 'k--', 'Parameter Change');
+    
+    hold off;
+    title(['Parameter Estimation for ' param_names{i}]);
+    xlabel('Time [s]');
+    ylabel(['Parameter ' param_names{i} ' value']);
+    legend(['Estimated ' param_names{i}], ['True ' param_names{i}]);
+    grid on;
+    % Auto-scale y-axis with some margin
+    ylim_current = ylim;
+    ylim_range = ylim_current(2) - ylim_current(1);
+    ylim([ylim_current(1) - 0.1*ylim_range, ylim_current(2) + 0.1*ylim_range]);
+    
+    % Save individual parameter figure
+    saveas(fig, ['part2_' param_names{i} '.png']);
+end
 
-% Connect blocks in RLS subsystem
-add_line([modelName3 '/RLS'], 'In1/1', 'RLSFunction/1', 'autorouting', 'on');
-add_line([modelName3 '/RLS'], 'In2/1', 'RLSFunction/2', 'autorouting', 'on');
-add_line([modelName3 '/RLS'], 'RLSFunction/1', 'Out1/1', 'autorouting', 'on');
+% Individual covariance matrix plots
+for i = 1:4
+    fig = figure('Name', ['Time-Varying System - P(' num2str(i) ',' num2str(i) ')'], 'NumberTitle', 'off');
+    plot(t, squeeze(P(i,i,:)), 'b-', 'LineWidth', 1.5);
+    % Add a vertical line at the change point
+    xline(change_time, 'k--', 'Parameter Change');
+    title(['Covariance Matrix Element P(' num2str(i) ',' num2str(i) ')']);
+    xlabel('Time [s]');
+    ylabel(['P(' num2str(i) ',' num2str(i) ') value']);
+    grid on;
+    
+    % Save covariance figure
+    saveas(fig, ['part2_P' num2str(i) num2str(i) '.png']);
+end
 
-add_block('simulink/Signal Routing/Demux', [modelName3 '/Demux']);
-set_param([modelName3 '/Demux'], 'Position', [550, 100, 570, 130]);
-set_param([modelName3 '/Demux'], 'Outputs', '4');
+%% PART 3: CONTINUOUS SYSTEM IDENTIFICATION
+% G2(s) = (s + 1)/(s^2 + 2s + 3)
 
-add_block('simulink/Sinks/Scope', [modelName3 '/ParametersScope']);
-set_param([modelName3 '/ParametersScope'], 'Position', [650, 100, 680, 130]);
+clear all;
+close all;
 
-add_block('simulink/Sources/Clock', [modelName3 '/Clock']);
-set_param([modelName3 '/Clock'], 'Position', [400, 200, 420, 220]);
+% Simulation parameters
+T = 0.01;     % Smaller sample time for continuous system
+t_end = 20;
+t = 0:T:t_end;
+N = length(t);
 
-add_block('simulink/Sinks/To Workspace', [modelName3 '/ToWorkspaceTheta']);
-set_param([modelName3 '/ToWorkspaceTheta'], 'Position', [550, 200, 610, 230]);
-set_param([modelName3 '/ToWorkspaceTheta'], 'VariableName', 'theta');
-set_param([modelName3 '/ToWorkspaceTheta'], 'SampleTime', '0.1');
+% Define continuous system
+num = [1 1];
+den = [1 2 3];
 
-add_block('simulink/Sinks/To Workspace', [modelName3 '/ToWorkspaceTime']);
-set_param([modelName3 '/ToWorkspaceTime'], 'Position', [450, 200, 510, 230]);
-set_param([modelName3 '/ToWorkspaceTime'], 'VariableName', 't');
-set_param([modelName3 '/ToWorkspaceTime'], 'SampleTime', '0.1');
+% Convert to discrete-time equivalent (for simulation)
+sys_cont = tf(num, den);
+sys_disc = c2d(sys_cont, T, 'zoh');  % Zero-order hold discretization
+[num_d, den_d] = tfdata(sys_disc, 'v');
 
-% Connect the blocks
-add_line(modelName3, 'Noise/1', 'TimeVaryingPlant/1', 'autorouting', 'on');
-add_line(modelName3, 'TimeVaryingPlant/1', 'Sum/1', 'autorouting', 'on');
-add_line(modelName3, 'OutputNoise/1', 'Sum/2', 'autorouting', 'on');
-add_line(modelName3, 'Sum/1', 'RLS/2', 'autorouting', 'on');
-add_line(modelName3, 'Noise/1', 'RLS/1', 'autorouting', 'on');
-add_line(modelName3, 'RLS/1', 'Demux/1', 'autorouting', 'on');
-add_line(modelName3, 'Demux/1', 'ParametersScope/1', 'autorouting', 'on');
-add_line(modelName3, 'RLS/1', 'ToWorkspaceTheta/1', 'autorouting', 'on');
-add_line(modelName3, 'Clock/1', 'ToWorkspaceTime/1', 'autorouting', 'on');
+% Extract discrete parameters
+a1_disc = -den_d(2);
+a0_disc = -den_d(3);
+b1_disc = num_d(2);
+b0_disc = num_d(3);
 
-% Save model
-save_system(modelName3);
+% Display discrete equivalent parameters
+disp('=== PART 3: CONTINUOUS SYSTEM IDENTIFICATION ===');
+disp('Discrete equivalent parameters of G2(s):');
+disp(['a1 = ' num2str(a1_disc)]);
+disp(['a0 = ' num2str(a0_disc)]);
+disp(['b1 = ' num2str(b1_disc)]);
+disp(['b0 = ' num2str(b0_disc)]);
 
-% Save model diagram as PNG
-fprintf('Saving time-varying model diagram as PNG...\n');
-print([modelName3, '/'], '-dpng', 'G1_time_varying_simulink_model.png');
+% Generate input signal
+rng(42);
+u = randn(N, 1);
 
-% Save internal subsystem as PNG
-open_system([modelName3 '/TimeVaryingPlant']);
-fprintf('Saving time-varying plant subsystem diagram as PNG...\n');
-print([modelName3, '/TimeVaryingPlant/'], '-dpng', 'G1_time_varying_plant_subsystem.png');
+% Generate output signal using discrete equivalent model
+y = zeros(N, 1);
+for k = 3:N
+    y(k) = a1_disc*y(k-1) + a0_disc*y(k-2) + b1_disc*u(k-1) + b0_disc*u(k-2);
+end
 
-% Display time-varying model configuration details
-fprintf('Time-Varying System Model Configuration:\n');
-fprintf('Sample Time: 0.1 seconds\n');
-fprintf('Simulation Time: 40 seconds\n');
-fprintf('Parameter Change Time: 20 seconds\n');
-fprintf('Changed Parameter: b0 from 0.2 to 0.5\n');
-fprintf('Noise Variance: 0.01\n');
-fprintf('Forgetting Factor: 0.95\n');
-fprintf('Initial Parameter Estimate: [0 0 0 0]\n');
-fprintf('Initial Covariance Matrix: 100*eye(4)\n\n');
+% Add measurement noise
+noise_level = 0.01;
+y_noisy = y + noise_level*randn(N, 1);
 
-fprintf('Instructions for running the simulation:\n');
-fprintf('1. Click the Run button in the Simulink model window\n');
-fprintf('2. View parameter estimation results in the ParametersScope\n');
-fprintf('3. Parameters will be saved to the workspace for further analysis\n');
-fprintf('4. For better visualization, plot the theta variable from the workspace\n\n');
+% Initialize RLS algorithm
+theta = zeros(N, 4);
+theta(1:2, :) = repmat([0, 0, 0, 0], 2, 1);
 
-fprintf('All Simulink models have been created and saved as PNG files.\n');
+P = zeros(4, 4, N);
+P(:,:,1:2) = repmat(100*eye(4), 1, 1, 2);
+
+lambda = 0.98;
+
+% Run RLS algorithm
+for k = 3:N
+    phi = [y_noisy(k-1); y_noisy(k-2); u(k-1); u(k-2)];
+    epsilon = y_noisy(k) - phi' * theta(k-1,:)';
+    
+    P_prev = P(:,:,k-1);
+    P(:,:,k) = (P_prev - (P_prev * phi * phi' * P_prev) / (lambda + phi' * P_prev * phi)) / lambda;
+    
+    K = P(:,:,k) * phi;
+    theta(k,:) = theta(k-1,:) + (K * epsilon)';
+end
+
+% Display parameter estimation results at different time points
+disp('Continuous system parameter estimation results:');
+disp('True parameters (discrete equivalent): ');
+disp(['a1 = ', num2str(a1_disc), ', a0 = ', num2str(a0_disc), ...
+      ', b1 = ', num2str(b1_disc), ', b0 = ', num2str(b0_disc)]);
+
+% Display results at 25%, 50%, 75% and 100% of simulation time
+checkpoints = [round(N*0.25), round(N*0.5), round(N*0.75), N];
+for i = 1:length(checkpoints)
+    k = checkpoints(i);
+    disp(['Parameters at t = ', num2str(t(k)), 's (', num2str(k), '/', num2str(N), ' samples):']);
+    disp(['a1 = ', num2str(theta(k,1)), ', a0 = ', num2str(theta(k,2)), ...
+          ', b1 = ', num2str(theta(k,3)), ', b0 = ', num2str(theta(k,4))]);
+    disp(['Error (%): a1 = ', num2str(100*(theta(k,1)-a1_disc)/a1_disc), ...
+          ', a0 = ', num2str(100*(theta(k,2)-a0_disc)/a0_disc), ...
+          ', b1 = ', num2str(100*(theta(k,3)-b1_disc)/b1_disc), ...
+          ', b0 = ', num2str(100*(theta(k,4)-b0_disc)/b0_disc)]);
+end
+
+% Combined plot (as before)
+fig3 = figure('Name', 'Continuous System Identification - Combined', 'NumberTitle', 'off');
+subplot(2,1,1);
+plot(t, theta(:,1), 'r-', t, theta(:,2), 'g-', t, theta(:,3), 'b-', t, theta(:,4), 'm-', 'LineWidth', 1.5);
+hold on;
+plot(t, a1_disc*ones(size(t)), 'r--', t, a0_disc*ones(size(t)), 'g--', ...
+     t, b1_disc*ones(size(t)), 'b--', t, b0_disc*ones(size(t)), 'm--', 'LineWidth', 1);
+hold off;
+title('Parameter Estimation for G2(s) = (s + 1)/(s^2 + 2s + 3)');
+xlabel('Time [s]');
+ylabel('Parameter values');
+legend('Estimated a_1', 'Estimated a_0', 'Estimated b_1', 'Estimated b_0', ...
+       'True a_1', 'True a_0', 'True b_1', 'True b_0');
+grid on;
+
+% Plot diagonal elements of P matrix
+subplot(2,1,2);
+plot(t, squeeze(P(1,1,:)), 'r-', t, squeeze(P(2,2,:)), 'g-', ...
+     t, squeeze(P(3,3,:)), 'b-', t, squeeze(P(4,4,:)), 'm-', 'LineWidth', 1.5);
+title('Covariance Matrix Diagonal Elements');
+xlabel('Time [s]');
+ylabel('P matrix diagonal values');
+legend('P(1,1)', 'P(2,2)', 'P(3,3)', 'P(4,4)');
+grid on;
+
+% Save the combined figure
+saveas(fig3, 'part3_combined.png');
+
+% Individual parameter plots with auto-scaling y-axis
+param_names = {'a_1', 'a_0', 'b_1', 'b_0'};
+true_values = [a1_disc, a0_disc, b1_disc, b0_disc];
+
+for i = 1:4
+    fig = figure('Name', ['Continuous System - ' param_names{i}], 'NumberTitle', 'off');
+    plot(t, theta(:,i), 'b-', 'LineWidth', 1.5);
+    hold on;
+    plot(t, true_values(i)*ones(size(t)), 'r--', 'LineWidth', 1.5);
+    hold off;
+    title(['Parameter Estimation for ' param_names{i}]);
+    xlabel('Time [s]');
+    ylabel(['Parameter ' param_names{i} ' value']);
+    legend(['Estimated ' param_names{i}], ['True ' param_names{i}]);
+    grid on;
+    % Auto-scale y-axis with some margin
+    ylim_current = ylim;
+    ylim_range = ylim_current(2) - ylim_current(1);
+    ylim([ylim_current(1) - 0.1*ylim_range, ylim_current(2) + 0.1*ylim_range]);
+    
+    % Save individual parameter figure
+    saveas(fig, ['part3_' param_names{i} '.png']);
+end
+
+% Individual covariance matrix plots
+for i = 1:4
+    fig = figure('Name', ['Continuous System - P(' num2str(i) ',' num2str(i) ')'], 'NumberTitle', 'off');
+    plot(t, squeeze(P(i,i,:)), 'b-', 'LineWidth', 1.5);
+    title(['Covariance Matrix Element P(' num2str(i) ',' num2str(i) ')']);
+    xlabel('Time [s]');
+    ylabel(['P(' num2str(i) ',' num2str(i) ') value']);
+    grid on;
+    
+    % Save covariance figure
+    saveas(fig, ['part3_P' num2str(i) num2str(i) '.png']);
+end
+
+%% PART 4: CONTINUOUS SYSTEM WITH TIME-VARYING PARAMETERS
+% G2(s) with changing numerator coefficient
+
+clear all;
+close all;
+
+% Simulation parameters
+T = 0.01;
+t_end = 40;
+t = 0:T:t_end;
+N = length(t);
+
+% Define initial and final continuous systems
+num1 = [1 1];  % Initial numerator
+den1 = [1 2 3];  % Denominator stays the same
+sys_cont1 = tf(num1, den1);
+sys_disc1 = c2d(sys_cont1, T, 'zoh');
+[num_d1, den_d1] = tfdata(sys_disc1, 'v');
+
+num2 = [1 2];  % Changed numerator coefficient
+den2 = [1 2 3];
+sys_cont2 = tf(num2, den2);
+sys_disc2 = c2d(sys_cont2, T, 'zoh');
+[num_d2, den_d2] = tfdata(sys_disc2, 'v');
+
+% Set up time-varying parameters
+change_time = 20;
+change_index = find(t >= change_time, 1);
+
+% Initialize parameter arrays
+a1 = zeros(N, 1);
+a0 = zeros(N, 1);
+b1 = zeros(N, 1);
+b0 = zeros(N, 1);
+
+% Fill with appropriate values
+a1(1:change_index-1) = den_d1(2);
+a0(1:change_index-1) = den_d1(3);
+b1(1:change_index-1) = num_d1(2);
+b0(1:change_index-1) = num_d1(3);
+
+a1(change_index:end) = den_d2(2);
+a0(change_index:end) = den_d2(3);
+b1(change_index:end) = num_d2(2);
+b0(change_index:end) = num_d2(3);
+
+% Generate input
+rng(42);
+u = randn(N, 1);
+
+% Generate output signal using time-varying parameters
+y = zeros(N, 1);
+for k = 3:N
+    y(k) = -a1(k)*y(k-1) - a0(k)*y(k-2) + b1(k)*u(k-1) + b0(k)*u(k-2);
+end
+
+% Add measurement noise
+noise_level = 0.01;
+y_noisy = y + noise_level*randn(N, 1);
+
+% Initialize RLS algorithm parameters
+theta = zeros(N, 4);
+theta(1:2, :) = repmat([0, 0, 0, 0], 2, 1);
+
+% Initialize covariance matrix P
+P = zeros(4, 4, N);
+P(:,:,1:2) = repmat(100*eye(4), 1, 1, 2);
+
+% Forgetting factor (smaller value for faster adaptation to changes)
+lambda = 0.95;
+
+% Run RLS algorithm
+for k = 3:N
+    phi = [-y_noisy(k-1); -y_noisy(k-2); u(k-1); u(k-2)];
+    epsilon = y_noisy(k) - phi' * theta(k-1,:)';
+    
+    P_prev = P(:,:,k-1);
+    P(:,:,k) = (P_prev - (P_prev * phi * phi' * P_prev) / (lambda + phi' * P_prev * phi)) / lambda;
+    
+    K = P(:,:,k) * phi;
+    theta(k,:) = theta(k-1,:) + (K * epsilon)';
+end
+
+% Display parameter estimation results for time-varying continuous system
+disp('=== PART 4: CONTINUOUS SYSTEM WITH TIME-VARYING PARAMETERS ===');
+disp('Initial continuous system G2(s) = (s + 1)/(s^2 + 2s + 3)');
+disp('Final continuous system G2(s) = (s + 2)/(s^2 + 2s + 3)');
+
+% Display discrete equivalents
+disp('Initial discrete equivalent parameters:');
+disp(['a1 = ', num2str(-den_d1(2)), ', a0 = ', num2str(-den_d1(3)), ...
+      ', b1 = ', num2str(num_d1(2)), ', b0 = ', num2str(num_d1(3))]);
+
+disp('Final discrete equivalent parameters:');
+disp(['a1 = ', num2str(-den_d2(2)), ', a0 = ', num2str(-den_d2(3)), ...
+      ', b1 = ', num2str(num_d2(2)), ', b0 = ', num2str(num_d2(3))]);
+
+% Display results before, at, and after the parameter change
+before_change = find(t < change_time, 1, 'last');
+after_change = change_index + round(N/10);  % A bit after change
+final_point = N;
+
+checkpoints = [before_change, change_index, after_change, final_point];
+checkpoint_labels = {'Before change', 'At change', 'Shortly after change', 'Final'};
+
+for i = 1:length(checkpoints)
+    k = checkpoints(i);
+    disp([checkpoint_labels{i}, ' parameters at t = ', num2str(t(k)), 's:']);
+    disp(['True:      a1 = ', num2str(-a1(k)), ', a0 = ', num2str(-a0(k)), ...
+          ', b1 = ', num2str(b1(k)), ', b0 = ', num2str(b0(k))]);
+    disp(['Estimated: a1 = ', num2str(theta(k,1)), ', a0 = ', num2str(theta(k,2)), ...
+          ', b1 = ', num2str(theta(k,3)), ', b0 = ', num2str(theta(k,4))]);
+    disp(['Error (%): a1 = ', num2str(100*(theta(k,1)-(-a1(k)))/(-a1(k))), ...
+          ', a0 = ', num2str(100*(theta(k,2)-(-a0(k)))/(-a0(k))), ...
+          ', b1 = ', num2str(100*(theta(k,3)-b1(k))/b1(k)), ...
+          ', b0 = ', num2str(100*(theta(k,4)-b0(k))/b0(k))]);
+end
+
+% Combined plot (as before)
+fig4 = figure('Name', 'Time-Varying Continuous System - Combined', 'NumberTitle', 'off');
+subplot(2,1,1);
+plot(t, theta(:,1), 'r-', t, theta(:,2), 'g-', t, theta(:,3), 'b-', t, theta(:,4), 'm-', 'LineWidth', 1.5);
+hold on;
+plot(t, -a1, 'r--', t, -a0, 'g--', t, b1, 'b--', t, b0, 'm--', 'LineWidth', 1);
+hold off;
+title(['Parameter Estimation for Time-Varying Continuous System (λ = ', num2str(lambda), ')']);
+xlabel('Time [s]');
+ylabel('Parameter values');
+legend('Estimated a_1', 'Estimated a_0', 'Estimated b_1', 'Estimated b_0', ...
+       'True a_1', 'True a_0', 'True b_1', 'True b_0');
+grid on;
+
+% Plot diagonal elements of P matrix
+subplot(2,1,2);
+plot(t, squeeze(P(1,1,:)), 'r-', t, squeeze(P(2,2,:)), 'g-', ...
+     t, squeeze(P(3,3,:)), 'b-', t, squeeze(P(4,4,:)), 'm-', 'LineWidth', 1.5);
+title('Covariance Matrix Diagonal Elements');
+xlabel('Time [s]');
+ylabel('P matrix diagonal values');
+legend('P(1,1)', 'P(2,2)', 'P(3,3)', 'P(4,4)');
+grid on;
+
+% Save the combined figure
+saveas(fig4, 'part4_combined.png');
+
+% Individual parameter plots with auto-scaling y-axis
+param_names = {'a_1', 'a_0', 'b_1', 'b_0'};
+true_values = {-a1, -a0, b1, b0};  % For time-varying parameters, use arrays
+
+for i = 1:4
+    fig = figure('Name', ['Time-Varying Continuous System - ' param_names{i}], 'NumberTitle', 'off');
+    plot(t, theta(:,i), 'b-', 'LineWidth', 1.5);
+    hold on;
+    plot(t, true_values{i}, 'r--', 'LineWidth', 1.5);
+    
+    % Add a vertical line at the change point
+    xline(change_time, 'k--', 'Parameter Change');
+    
+    hold off;
+    title(['Parameter Estimation for ' param_names{i}]);
+    xlabel('Time [s]');
+    ylabel(['Parameter ' param_names{i} ' value']);
+    legend(['Estimated ' param_names{i}], ['True ' param_names{i}]);
+    grid on;
+    % Auto-scale y-axis with some margin
+    ylim_current = ylim;
+    ylim_range = ylim_current(2) - ylim_current(1);
+    ylim([ylim_current(1) - 0.1*ylim_range, ylim_current(2) + 0.1*ylim_range]);
+    
+    % Save individual parameter figure
+    saveas(fig, ['part4_' param_names{i} '.png']);
+end
+
+% Individual covariance matrix plots
+for i = 1:4
+    fig = figure('Name', ['Time-Varying Continuous System - P(' num2str(i) ',' num2str(i) ')'], 'NumberTitle', 'off');
+    plot(t, squeeze(P(i,i,:)), 'b-', 'LineWidth', 1.5);
+    % Add a vertical line at the change point
+    xline(change_time, 'k--', 'Parameter Change');
+    title(['Covariance Matrix Element P(' num2str(i) ',' num2str(i) ')']);
+    xlabel('Time [s]');
+    ylabel(['P(' num2str(i) ',' num2str(i) ') value']);
+    grid on;
+    
+    % Save covariance figure
+    saveas(fig, ['part4_P' num2str(i) num2str(i) '.png']);
+end
+
+% End of script

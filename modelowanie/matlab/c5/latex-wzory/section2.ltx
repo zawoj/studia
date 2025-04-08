@@ -1,0 +1,34 @@
+
+
+\section{Implementacja}
+\label{sec:Identyfikacja/implementacja}
+
+W MATLAB-ie zaimplementowano identyfikację parametryczną dla wszystkich badanych układów. Obiekty dyskretne i ciągłe zdefiniowano przy użyciu ich transmitancji. Dla układów dyskretnych $G_1(z)$ i $G_2(z)$ wykorzystano bezpośrednią symulację za pomocą funkcji \texttt{dlsim}, natomiast dla układów ciągłych $G_3(s)$, $G_4(s)$ i $G_5(s)$ zastosowano funkcję \texttt{tf} do zdefiniowania modeli oraz \texttt{lsim} do symulacji odpowiedzi.
+
+Dla układów dyskretnych zastosowano różne typy wymuszeń w celu określenia ich wpływu na jakość identyfikacji:
+\begin{itemize}
+    \item skok jednostkowy (\texttt{ones})
+    \item sygnał losowy (\texttt{rand})
+    \item sygnał sinusoidalny (\texttt{sin})
+    \item suma sinusoid o różnych częstotliwościach
+\end{itemize}
+
+Do sygnałów wyjściowych dodano szum gaussowski na poziomie 15-35\% amplitudy sygnału, generowany funkcją \texttt{randn}. Identyfikację parametryczną wykonano metodą najmniejszych kwadratów (LS) z wykorzystaniem pseudoodwrotności macierzy (\texttt{pinv}). Dla układu $G_1(z)$ rzędu drugiego zbudowano macierz informacyjną $\Phi$ zawierającą opóźnione wejścia i wyjścia, a dla układu $G_2(z)$ rzędu trzeciego odpowiednio rozszerzono jej strukturę.
+
+Dla układów ciągłych przeprowadzono analizę wpływu okresu próbkowania na jakość identyfikacji, testując wartości $T_s \in \{0.05, 0.1, 0.3, 0.5, 1.0\}$ s. Dyskretyzację analityczną implementowano metodami:
+\begin{itemize}
+    \item aproksymacji Zero-Order Hold (ZOH) za pomocą funkcji \texttt{c2d(G, ts, 'zoh')}
+    \item aproksymacji Tustina za pomocą funkcji \texttt{c2d(G, ts, 'tustin')}
+\end{itemize}
+
+Dla wszystkich układów przeprowadzono walidację zidentyfikowanych modeli poprzez:
+\begin{itemize}
+    \item porównanie odpowiedzi czasowych układu rzeczywistego i modelu
+    \item obliczenie błędu średniokwadratowego (MSE) jako miary dokładności
+    \item analizę residuów (błędów predykcji)
+    \item porównanie charakterystyk częstotliwościowych (dla układów ciągłych)
+\end{itemize}
+
+Dla układów ciągłych przeprowadzono również analizę stabilności modelu dyskretnego na podstawie położenia biegunów oraz określono wpływ uwarunkowania macierzy informacyjnej na dokładność estymacji. Dodatkowo dla każdego przypadku wykorzystano rozkład wartości szczególnych (SVD) macierzy $\Phi$ do oceny numerycznego uwarunkowania problemu identyfikacji.
+
+Wyniki wizualizowano za pomocą wieloczęściowych wykresów, zawierających sygnały wejściowe, porównanie odpowiedzi, błędy predykcji oraz charakterystyki częstotliwościowe, zapisując je w plikach PNG dla dalszej analizy.

@@ -1,0 +1,45 @@
+\clearpage
+\section{Identyfikacja parametrów w układach dynamicznych z wykorzystaniem filtru Kalmana}
+\label{sec:Identyfikacja}
+
+Celem ćwiczenia jest identyfikacja parametrów układów dynamicznych z wykorzystaniem filtru Kalmana. Zadanie polega na estymacji w czasie rzeczywistym wybranych parametrów systemu na podstawie pomiarów wejścia i wyjścia. W ramach ćwiczenia zbadano wpływ różnych czynników na jakość identyfikacji, takich jak: wartość współczynnika szumu procesu parametru (q_a), poziom szumów systemowych i pomiarowych oraz różne wartości prawdziwe identyfikowanego parametru.
+
+\subsection{Analizowane Układy}
+\label{subsec:Identyfikacja/uklady}
+
+W ramach identyfikacji analizowano dwa układy:
+
+\begin{itemize}
+    \item \textbf{Układ jednowymiarowy} (Zadanie 1): Model pierwszego rzędu opisany równaniem stanu:
+    \begin{equation}
+        x(k+1) = a_k \cdot x(k) + u(k) + w(k)
+    \end{equation}
+    z pomiarem:
+    \begin{equation}
+        y(k) = x(k) + v(k)
+    \end{equation}
+    gdzie $a_k$ jest identyfikowanym parametrem, $u(k)$ to wejście, $w(k)$ to szum procesu, a $v(k)$ to szum pomiaru.
+    
+    \item \textbf{Układ dwuwymiarowy} (Zadanie 2): Model drugiego rzędu z macierzami systemu:
+    \begin{equation}
+        A = \begin{bmatrix} 0.99 & 0.095 \\ -0.19 & 0.9 \end{bmatrix}, \quad
+        B = \begin{bmatrix} 0.005 \\ 0.095 \end{bmatrix}, \quad
+        C = \begin{bmatrix} 1 & 0 \end{bmatrix}
+    \end{equation}
+    gdzie $a_{11} = 0.99$ jest identyfikowanym parametrem.
+\end{itemize}
+
+\subsection{Metoda Identyfikacji}
+\label{subsec:Identyfikacja/metoda}
+
+Do identyfikacji parametrów zastosowano filtr Kalmana, który jest rekursywnym estymatorem stanu dla układów liniowych. W kontekście identyfikacji parametrów, wektor stanu został rozszerzony o identyfikowany parametr (augmented state approach). W zadaniu pierwszym wektor stanu zawierał zmienną stanu i parametr $a_k$, natomiast w zadaniu drugim zawierał dwie zmienne stanu i parametr $a_{11}$.
+
+Kluczowymi elementami implementacji filtru Kalmana są:
+\begin{itemize}
+    \item \textbf{Krok predykcji}, w którym obliczane są przewidywane wartości parametrów oraz ich kowariancji
+    \item \textbf{Obliczenie wzmocnienia Kalmana} na podstawie kowariancji i modelu obserwacji
+    \item \textbf{Krok korekcji}, w którym aktualizowane są parametry na podstawie różnicy między pomiarami a przewidywaniami
+\end{itemize}
+
+Szczególny nacisk położono na badanie wpływu parametru $q_a$, który reprezentuje wariancję szumu procesu parametru i determinuje szybkość adaptacji estymatora. Większe wartości $q_a$ prowadzą do szybszej reakcji estymatora na zmiany, ale zwiększają wrażliwość na szumy, podczas gdy mniejsze wartości $q_a$ zapewniają stabilniejsze, ale wolniejsze estymacje.
+

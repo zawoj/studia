@@ -1,0 +1,149 @@
+\section{Wyniki}
+\label{sec:Wyniki}
+
+W tej sekcji przedstawiono wyniki identyfikacji parametrów układów dynamicznych z wykorzystaniem filtru Kalmana, zilustrowane wykresami i zestawami liczbowymi. Każdy podrozdział odpowiada jednemu z zadań oraz zawiera analizę wpływu różnych czynników na jakość identyfikacji.
+
+\subsection{Identyfikacja Parametru Układu Jednowymiarowego (Zadanie 1)}
+\label{subsec:Wyniki/zad1}
+
+\subsubsection{Wpływ współczynnika $q_a$ na identyfikację}
+
+Pierwszym badanym aspektem był wpływ współczynnika $q_a$ (wariancji szumu procesu parametru) na jakość identyfikacji parametru $a_k$ w układzie jednowymiarowym.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad1_qa_0.0010.png}
+    \caption{Identyfikacja parametru $a_k$ dla $q_a = 0.001$}
+    \label{fig:zad1_qa_0.001}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad1_qa_0.0100.png}
+    \caption{Identyfikacja parametru $a_k$ dla $q_a = 0.01$}
+    \label{fig:zad1_qa_0.01}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad1_qa_0.1000.png}
+    \caption{Identyfikacja parametru $a_k$ dla $q_a = 0.1$}
+    \label{fig:zad1_qa_0.1}
+\end{figure}
+
+Wartości końcowych oszacowań parametru $a_k$ dla różnych $q_a$:
+\begin{itemize}
+    \item $q_a = 0.001$: Końcowe oszacowanie $a_k = 0.7433$, Rzeczywiste $a_k = 0.8000$, Błąd = $0.0567$
+    \item $q_a = 0.01$: Końcowe oszacowanie $a_k = 0.7742$, Rzeczywiste $a_k = 0.8000$, Błąd = $0.0258$
+    \item $q_a = 0.1$: Końcowe oszacowanie $a_k = 0.8576$, Rzeczywiste $a_k = 0.8000$, Błąd = $0.0576$
+\end{itemize}
+
+Z przeprowadzonych testów wynika, że dla $q_a = 0.01$ uzyskano najniższy błąd identyfikacji, co sugeruje optymalny kompromis między szybkością adaptacji a odpornością na szumy.
+
+\subsubsection{Wpływ rzeczywistej wartości parametru na identyfikację}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad1_different_a_true.png}
+    \caption{Identyfikacja parametru $a_k$ dla różnych wartości rzeczywistych parametru}
+    \label{fig:zad1_different_a_true}
+\end{figure}
+
+Wartości końcowych oszacowań dla różnych rzeczywistych wartości parametru $a_k$:
+\begin{itemize}
+    \item $a_{true} = 0.50$: Końcowe oszacowanie $a_k = 0.3365$, Błąd = $0.1635$
+    \item $a_{true} = 0.80$: Końcowe oszacowanie $a_k = 0.6445$, Błąd = $0.1555$
+    \item $a_{true} = 0.95$: Końcowe oszacowanie $a_k = 0.9577$, Błąd = $0.0077$
+\end{itemize}
+
+Najlepsze wyniki uzyskano dla $a_{true} = 0.95$, natomiast dla niższych wartości błędy były znacznie większe. Może to wynikać z dynamiki układu i mniejszego wpływu szumów przy wyższych wartościach parametru.
+
+\subsubsection{Wpływ poziomów szumów na identyfikację}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad1_different_noise_levels.png}
+    \caption{Identyfikacja parametru $a_k$ dla różnych poziomów szumów}
+    \label{fig:zad1_different_noise_levels}
+\end{figure}
+
+Wartości końcowych oszacowań dla różnych poziomów szumów procesu $q_w$ i pomiaru $r_v$:
+\begin{itemize}
+    \item $q_w = r_v = 0.001$: Końcowe oszacowanie $a_k = 0.8617$, Błąd = $0.0617$
+    \item $q_w = r_v = 0.01$: Końcowe oszacowanie $a_k = 0.5804$, Błąd = $0.2196$
+    \item $q_w = r_v = 0.1$: Końcowe oszacowanie $a_k = 0.4483$, Błąd = $0.3517$
+\end{itemize}
+
+Wyniki pokazują, że zwiększenie poziomów szumów prowadzi do wzrostu błędu identyfikacji. Najniższy błąd uzyskano dla najniższego poziomu szumów $q_w = r_v = 0.001$.
+
+\subsection{Identyfikacja Parametru Układu Dwuwymiarowego (Zadanie 2)}
+\label{subsec:Wyniki/zad2}
+
+\subsubsection{Wpływ współczynnika $q_a$ na identyfikację}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad2_qa_0.0001.png}
+    \caption{Identyfikacja parametru $a_{11}$ dla $q_a = 0.0001$}
+    \label{fig:zad2_qa_0.0001}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad2_qa_0.0010.png}
+    \caption{Identyfikacja parametru $a_{11}$ dla $q_a = 0.001$}
+    \label{fig:zad2_qa_0.001}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad2_qa_0.0100.png}
+    \caption{Identyfikacja parametru $a_{11}$ dla $q_a = 0.01$}
+    \label{fig:zad2_qa_0.01}
+\end{figure}
+
+Wartości końcowych oszacowań parametru $a_{11}$ dla różnych $q_a$:
+\begin{itemize}
+    \item $q_a = 0.0001$: Końcowe oszacowanie $a_{11} = 0.5000$, Rzeczywiste $a_{11} = 0.9900$, Błąd = $0.4900$
+    \item $q_a = 0.001$: Końcowe oszacowanie $a_{11} = 0.5000$, Rzeczywiste $a_{11} = 0.9900$, Błąd = $0.4900$
+    \item $q_a = 0.01$: Końcowe oszacowanie $a_{11} = 0.5000$, Rzeczywiste $a_{11} = 0.9900$, Błąd = $0.4900$
+\end{itemize}
+
+W przypadku układu dwuwymiarowego wszystkie testowane wartości $q_a$ dały takie same wartości końcowe estymacji, równe wartości początkowej $a_{11} = 0.5$. Wskazuje to na problemy z identyfikacją parametru w tym układzie, co może wynikać z ograniczonej obserwowalności parametru $a_{11}$ przy danej konfiguracji pomiarowej (macierz $C = [1 \; 0]$).
+
+\subsubsection{Wpływ szumu systemowego na identyfikację}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad2_different_system_noise.png}
+    \caption{Identyfikacja parametru $a_{11}$ dla różnych poziomów szumu systemowego}
+    \label{fig:zad2_different_system_noise}
+\end{figure}
+
+Wartości końcowych oszacowań dla różnych poziomów szumu systemowego $Q$:
+\begin{itemize}
+    \item $Q = 0.00005$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+    \item $Q = 0.0005$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+    \item $Q = 0.005$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+\end{itemize}
+
+Podobnie jak w przypadku testów z różnymi $q_a$, zmiana poziomu szumu systemowego nie wpłynęła na wyniki identyfikacji parametru $a_{11}$, co potwierdza problemy z identyfikacją tego parametru.
+
+\subsubsection{Wpływ szumu pomiarowego na identyfikację}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{zad2_different_measurement_noise.png}
+    \caption{Identyfikacja parametru $a_{11}$ dla różnych poziomów szumu pomiarowego}
+    \label{fig:zad2_different_measurement_noise}
+\end{figure}
+
+Wartości końcowych oszacowań dla różnych poziomów szumu pomiarowego $R$:
+\begin{itemize}
+    \item $R = 0.00001$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+    \item $R = 0.0001$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+    \item $R = 0.001$: Końcowe oszacowanie $a_{11} = 0.5000$, Błąd = $0.4900$
+\end{itemize}
+
+Identyfikacja parametru $a_{11}$ nie powiodła się również przy różnych poziomach szumu pomiarowego, co wskazuje na fundamentalny problem z identyfikacją tego parametru w danej konfiguracji układu.
+

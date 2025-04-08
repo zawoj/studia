@@ -1,0 +1,71 @@
+\section{Wnioski}
+\label{sec:Wnioski}
+
+W niniejszym rozdziale przedstawiono wnioski wyciągnięte na podstawie przeprowadzonych badań identyfikacji parametrów układów dynamicznych z wykorzystaniem filtru Kalmana.
+
+\subsection{Wpływ współczynnika szumu procesu parametru $q_a$}
+
+Przeprowadzone badania wykazały, że współczynnik $q_a$ ma istotny wpływ na jakość identyfikacji parametrów w układach dynamicznych:
+
+\begin{itemize}
+    \item W przypadku układu jednowymiarowego (Zadanie 1) zaobserwowano, że pośrednia wartość $q_a = 0.01$ dała najlepsze wyniki identyfikacji, z błędem oszacowania równym 0.0258, podczas gdy dla $q_a = 0.001$ i $q_a = 0.1$ błędy wynosiły odpowiednio 0.0567 i 0.0576.
+    
+    \item Dobór optymalnej wartości $q_a$ stanowi kompromis między szybkością adaptacji estymatora a jego odpornością na szumy. Zbyt niska wartość $q_a$ powoduje, że estymator wolno reaguje na zmiany parametru, natomiast zbyt wysoka wartość zwiększa wrażliwość na szumy w systemie.
+    
+    \item W przypadku układu dwuwymiarowego (Zadanie 2) zmiana wartości $q_a$ nie przyniosła poprawy identyfikacji parametru $a_{11}$, co wskazuje, że problem leży w obserwowalności układu, a nie w doborze współczynnika $q_a$.
+\end{itemize}
+
+\subsection{Wpływ poziomów szumów na identyfikację}
+
+Analiza wpływu szumów procesu i pomiaru na jakość identyfikacji prowadzi do następujących wniosków:
+
+\begin{itemize}
+    \item W układzie jednowymiarowym (Zadanie 1) zaobserwowano silną zależność między poziomem szumów a dokładnością identyfikacji. Dla najniższego poziomu szumów ($q_w = r_v = 0.001$) uzyskano błąd 0.0617, podczas gdy dla najwyższego poziomu ($q_w = r_v = 0.1$) błąd wzrósł do 0.3517.
+    
+    \item Wzrost poziomu szumów powoduje degradację jakości identyfikacji, co jest spodziewanym wynikiem, ponieważ szumy maskują rzeczywiste zależności między sygnałami w układzie.
+    
+    \item W układzie dwuwymiarowym (Zadanie 2) zmiana poziomów szumów (zarówno systemowego, jak i pomiarowego) nie wpłynęła na wyniki identyfikacji parametru $a_{11}$, co potwierdza fundamentalny problem z oberwowalnością tego parametru.
+\end{itemize}
+
+\subsection{Obserwowalność parametrów}
+
+Kluczowym wnioskiem z przeprowadzonych badań jest zależność między obserwowalnością parametrów a możliwością ich identyfikacji:
+
+\begin{itemize}
+    \item W układzie jednowymiarowym (Zadanie 1), gdzie mierzona była bezpośrednio zmienna stanu $x(k)$, na którą parametr $a_k$ miał bezpośredni wpływ, identyfikacja przebiegała pomyślnie mimo obecności szumów.
+    
+    \item W układzie dwuwymiarowym (Zadanie 2), gdzie mierzona była tylko pierwsza zmienna stanu ($C = [1 \; 0]$), identyfikacja parametru $a_{11}$ nie powiodła się, mimo zastosowania różnych wartości $q_a$ oraz poziomów szumów. Wskazuje to na ograniczoną obserwowalność tego parametru przy danej konfiguracji pomiarowej.
+    
+    \item Wynik ten potwierdza teorię sterowania, zgodnie z którą parametry muszą być obserwowalne przez dostępne pomiary, aby możliwa była ich identyfikacja. W przypadku układu dwuwymiarowego wpływ parametru $a_{11}$ na pierwszą zmienną stanu (i tym samym na pomiar) był prawdopodobnie zbyt słaby lub maskowany przez inne elementy dynamiki układu.
+\end{itemize}
+
+\subsection{Wpływ wartości identyfikowanego parametru}
+
+Badanie wpływu różnych rzeczywistych wartości parametru $a_k$ w układzie jednowymiarowym (Zadanie 1) pozwoliło zaobserwować, że:
+
+\begin{itemize}
+    \item Najlepszą identyfikację uzyskano dla $a_{true} = 0.95$ (błąd 0.0077), podczas gdy dla $a_{true} = 0.5$ i $a_{true} = 0.8$ błędy były znacznie większe (odpowiednio 0.1635 i 0.1555).
+    
+    \item Wynik ten może wynikać z właściwości dynamicznych układu - dla parametru bliskiego jedności (układ na granicy stabilności) dynamika systemu jest bardziej "wyrazista", co ułatwia identyfikację.
+    
+    \item Alternatywnie, może to wynikać z interakcji między wartością parametru a charakterystyką szumu w układzie, gdzie dla wyższych wartości $a_k$ wpływ szumów procesu i pomiaru jest relatywnie mniejszy na dynamikę systemu.
+\end{itemize}
+
+\subsection{Podsumowanie}
+
+Przeprowadzone badania identyfikacji parametrów z wykorzystaniem filtru Kalmana pozwoliły sformułować następujące kluczowe wnioski:
+
+\begin{itemize}
+    \item Filtr Kalmana jest skutecznym narzędziem do identyfikacji parametrów układów dynamicznych, pod warunkiem że parametry te są obserwowalne przez dostępne pomiary.
+    
+    \item Dobór współczynnika $q_a$ ma istotny wpływ na jakość identyfikacji i powinien być dostosowany do specyfiki układu oraz poziomów szumów.
+    
+    \item Zwiększenie poziomów szumów procesu i pomiaru prowadzi do pogorszenia jakości identyfikacji, co jest zgodne z oczekiwaniami.
+    
+    \item Identyfikacja parametrów w układach wyższego rzędu wymaga starannego doboru konfiguracji pomiarowej, aby zapewnić obserwowalność wszystkich identyfikowanych parametrów.
+    
+    \item Wykonane badania potwierdzają praktyczną przydatność teorii sterowania w zakresie obserwowalności i identyfikacji układów dynamicznych.
+\end{itemize}
+
+Dalsze badania mogłyby obejmować modyfikację konfiguracji pomiarowej w układzie dwuwymiarowym (np. zmiana macierzy $C$), zastosowanie innych metod identyfikacji lub rozważenie identyfikacji innych parametrów w macierzy $A$ układu dwuwymiarowego.
+

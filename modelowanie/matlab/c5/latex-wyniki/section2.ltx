@@ -1,0 +1,90 @@
+\section{Implementacja}
+\label{sec:Implementacja}
+
+W MATLAB-ie zaimplementowano identyfikację parametryczną dla dwóch układów dynamicznych z wykorzystaniem filtru Kalmana. Implementacja obejmowała symulację systemów, generowanie sygnałów wejściowych, modelowanie szumów oraz implementację algorytmu filtru Kalmana rozszerzonego o estymację parametrów.
+
+\subsection{Układ Jednowymiarowy (Zadanie 1)}
+\label{subsec:Implementacja/zad1}
+
+Dla układu jednowymiarowego implementacja obejmowała:
+
+\begin{itemize}
+    \item Inicjalizację parametrów symulacji: czas próbkowania $T = 0.1$ s, czas końcowy $t_{end} = 20$ s
+    \item Symulację układu dynamicznego pierwszego rzędu: $x(k+1) = a_k \cdot x(k) + u(k) + w(k)$
+    \item Generowanie losowego sygnału wejściowego $u(k)$ o rozkładzie jednostajnym w przedziale $[-1, 1]$
+    \item Dodanie szumów procesu $w(k) \sim \mathcal{N}(0, q_w)$ i pomiaru $v(k) \sim \mathcal{N}(0, r_v)$
+    \item Inicjalizację filtru Kalmana z początkowym oszacowaniem parametru $a_k(0) = 0$ i kowariancją $P(0) = 1$
+\end{itemize}
+
+Główna pętla filtru Kalmana zawierała:
+\begin{verbatim}
+% Prediction step
+a_hat_minus = a_hat(k);
+P_minus = P(k) + q_a;
+
+% Kalman gain calculation
+K = P_minus * x(k) / (x(k)^2 * P_minus + q_w + r_v);
+
+% Update step
+a_hat(k+1) = a_hat_minus + K * (y(k+1) - a_hat_minus * x(k) - u(k));
+P(k+1) = (1 - K * x(k)) * P_minus;
+\end{verbatim}
+
+W ramach eksperymentów przeprowadzono testy z:
+\begin{itemize}
+    \item Różnymi wartościami parametru $q_a \in \{0.001, 0.01, 0.1\}$ 
+    \item Różnymi prawdziwymi wartościami identyfikowanego parametru $a_{true} \in \{0.5, 0.8, 0.95\}$
+    \item Różnymi poziomami szumów $q_w, r_v \in \{0.001, 0.01, 0.1\}$
+\end{itemize}
+
+\subsection{Układ Dwuwymiarowy (Zadanie 2)}
+\label{subsec:Implementacja/zad2}
+
+Dla układu dwuwymiarowego implementacja obejmowała:
+
+\begin{itemize}
+    \item Inicjalizację parametrów symulacji: czas próbkowania $T_s = 0.1$ s, czas końcowy $t_{end} = 30$ s
+    \item Definicję macierzy systemowych $A$, $B$, $C$ dla układu drugiego rzędu
+    \item Symulację układu z wykorzystaniem równań stanu macierzowych
+    \item Generowanie losowego sygnału wejściowego $u(k)$ o rozkładzie jednostajnym
+    \item Dodanie szumów procesu z macierzą kowariancji $Q$ i szumu pomiaru z wariancją $R$
+    \item Implementację filtru Kalmana z rozszerzonym wektorem stanu zawierającym identyfikowany parametr $a_{11}$
+\end{itemize}
+
+Podejście z rozszerzonym wektorem stanu (augmented state) wymagało:
+\begin{itemize}
+    \item Konstrukcji rozszerzonego wektora stanu $x_{aug} = [x_1; x_2; a_{11}]$
+    \item Modyfikacji macierzy systemowych dla rozszerzonego modelu: $A_{aug}$, $B_{aug}$, $C_{aug}$
+    \item Aktualizacji macierzy $A$ w każdym kroku na podstawie bieżącego oszacowania $a_{11}$
+\end{itemize}
+
+Kluczowe elementy implementacji filtru Kalmana:
+\begin{verbatim}
+% Current a11 estimate
+a11_hat = x_aug(3, k);
+
+% Construct augmented A matrix with current a11 estimate
+A_hat = [a11_hat, A(1,2); A(2,1), A(2,2)];
+A_aug = [A_hat, zeros(n,1); zeros(1,n), 1];
+
+% Prediction step
+x_minus = A_aug * x_aug(:, k) + B_aug * u(k);
+P_minus = A_aug * P_aug(:,:, k) * A_aug' + Q_aug;
+
+% Kalman gain calculation
+K = P_minus * C_aug' / (C_aug * P_minus * C_aug' + R);
+
+% Update step
+x_aug(:, k+1) = x_minus + K * (y(:, k+1) - C_aug * x_minus);
+P_aug(:,:, k+1) = (eye(n+1) - K * C_aug) * P_minus;
+\end{verbatim}
+
+W ramach eksperymentów przeprowadzono testy z:
+\begin{itemize}
+    \item Różnymi wartościami parametru $q_a \in \{0.0001, 0.001, 0.01\}$
+    \item Różnymi poziomami szumu systemowego $Q \in \{0.00005, 0.0005, 0.005\}$
+    \item Różnymi poziomami szumu pomiarowego $R \in \{0.00001, 0.0001, 0.001\}$
+\end{itemize}
+
+Dla obu zadań wyniki przedstawiono w formie wykresów prezentujących przebieg wartości estymowanego parametru w czasie oraz wartości referencyjne rzeczywistych parametrów. Wykresy generowano z wykorzystaniem funkcji \texttt{plot} i zapisywano w plikach \texttt{PNG}.
+

@@ -1,0 +1,1 @@
+===== IDENTYFIKACJA UKŁADU G2 ===== Identyfikowane parametry: Prawdziwe parametry: b2 = 0.1, b1 = 0.2, b0 = 0.3, a2 = 0.3, a1 = 0.4, a0 = 0.2 Estymowane parametry: b2 = 0.087702, b1 = 0.20312, b0 = 0.29915, a2 = 0.26268, a1 = 0.3756, a0 = 0.20571 Wartości szczególne: 12.8485 4.27343 4.00932 2.03381 1.54933 1.04918 MSE dla modelu G2: 0.0014367
